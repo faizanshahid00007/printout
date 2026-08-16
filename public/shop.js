@@ -137,14 +137,27 @@ async function load() {
   }
 }
 
-function startPolling() {
-  stopPolling();
-  load();
-  timer = setInterval(load, 1000);
+// Each refresh waits for the previous one to come back before scheduling the
+// next. A fixed interval would stack requests on top of each other whenever the
+// round trip runs longer than the gap, which it does on a slow connection.
+let polling = false;
+
+async function startPolling() {
+  if (polling) return;
+  polling = true;
+
+  while (polling) {
+    await load();
+    if (!polling) break;
+    await new Promise((resume) => {
+      timer = setTimeout(resume, 1000);
+    });
+  }
 }
 
 function stopPolling() {
-  if (timer) clearInterval(timer);
+  polling = false;
+  if (timer) clearTimeout(timer);
   timer = null;
 }
 
