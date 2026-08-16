@@ -1,4 +1,4 @@
-# Campus Print Shop
+# Printout
 
 Students send a batch of files from their phone and get a 5-character code. The shop
 opens the queue on the counter PC, prints the files, and marks the job done.
@@ -40,7 +40,7 @@ All optional, set as environment variables:
 | `MAX_FILES`     | `20`     | Files per order                |
 | `MAX_TOTAL_MB`  | `80`     | Total size of one order        |
 | `UPI_ID`        | unset    | Shop's UPI ID; unset hides paying online |
-| `UPI_NAME`      | `Campus Print Shop` | Payee name shown in the UPI app |
+| `UPI_NAME`      | `Printout` | Payee name shown in the UPI app |
 
 There is no default password. The queue holds students' files and phone numbers, so the
 server exits rather than start with an open back door.
