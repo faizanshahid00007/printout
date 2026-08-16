@@ -158,17 +158,15 @@ const upload = multer({
   },
 });
 
-async function newOrderCode() {
-  const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no look-alike characters
-  for (let attempt = 0; attempt < 50; attempt += 1) {
-    let code = '';
-    for (let i = 0; i < 5; i += 1) {
-      code += alphabet[crypto.randomInt(alphabet.length)];
-    }
-    const clash = await db.one('SELECT 1 FROM orders WHERE code = $1', [code]);
-    if (!clash) return code;
-  }
-  throw new Error('Could not allocate an order code');
+// The student's own name is the code: nothing to memorise, and the counter can
+// call it out. It deliberately repeats across a student's orders, so anywhere a
+// code is looked up, the most recent order wins.
+function codeFromName(name) {
+  return name
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase()
+    .slice(0, 40);
 }
 
 // Pages per file: read out of a PDF, one per image, unknowable for Word — a .docx
@@ -213,7 +211,9 @@ app.post('/api/orders', (req, res) => {
     };
 
     if (studentName.length < 2 || studentName.length > 60) return reject('Enter your name');
-    if (phone.length !== 10) return reject('Enter a 10-digit phone number');
+    if (phone && phone.length !== 10) {
+      return reject('That phone number is not 10 digits — leave it blank if you would rather not');
+    }
     if (totalBytes > MAX_TOTAL_MB * 1024 * 1024) {
       return reject(`That batch is over the ${MAX_TOTAL_MB} MB total limit`);
     }
@@ -264,13 +264,13 @@ app.post('/api/orders', (req, res) => {
 
       const quoteNeeded = counted.some((item) => item.price === null);
       const price = counted.reduce((sum, item) => sum + (item.price ?? 0), 0);
-      const code = await newOrderCode();
+      const code = codeFromName(studentName);
 
       await db.transaction(async (client) => {
         const { rows } = await client.query(
           `INSERT INTO orders (code, student_name, phone, notes, price, quote_needed)
            VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
-          [code, studentName, phone, notes || null, price, quoteNeeded]
+          [code, studentName, phone || null, notes || null, price, quoteNeeded]
         );
 
         for (const [index, item] of counted.entries()) {
@@ -334,7 +334,7 @@ app.get('/api/orders/:code', async (req, res) => {
   const order = await db.one(
     `SELECT id, code, student_name, price, quote_needed, status, created_at,
             payment_status, payment_method, payment_ref, paid_amount
-       FROM orders WHERE code = $1`,
+       FROM orders WHERE code = $1 ORDER BY id DESC LIMIT 1`,
     [String(req.params.code).toUpperCase()]
   );
   if (!order) return res.status(404).json({ error: 'No order with that code' });
@@ -353,7 +353,7 @@ const findOrderByCode = (code) =>
   db.one(
     `SELECT id, code, price, quote_needed, payment_status, payment_method, payment_ref,
             paid_amount, payment_order_id
-       FROM orders WHERE code = $1`,
+       FROM orders WHERE code = $1 ORDER BY id DESC LIMIT 1`,
     [String(code).toUpperCase()]
   );
 

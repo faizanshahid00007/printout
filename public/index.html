@@ -34,7 +34,7 @@
       <section id="form-view">
         <p class="lede">
           Send your files from here — PDFs, photos, Word documents — then collect the prints at the
-          counter with the code we give you. No queue, no pen drive.
+          counter by giving your name. No queue, no pen drive.
         </p>
 
         <div class="alert" id="error" role="alert"></div>
@@ -70,7 +70,7 @@
               <input type="text" id="studentName" name="studentName" autocomplete="name" required />
             </div>
             <div class="field">
-              <label for="phone">Phone</label>
+              <label for="phone">Phone <span style="text-transform: none">(optional)</span></label>
               <input
                 type="tel"
                 id="phone"
@@ -78,7 +78,6 @@
                 inputmode="numeric"
                 autocomplete="tel"
                 placeholder="10 digits"
-                required
               />
             </div>
           </div>
@@ -98,10 +97,10 @@
         <section class="lookup">
           <h2>Already sent something?</h2>
           <p class="hint">
-            Enter your code to check the status, pay, or bring the slip back up.
+            Enter your name to check the status, pay, or bring your slip back up.
           </p>
           <form id="lookup-form">
-            <input type="text" id="lookup-code" maxlength="5" placeholder="Order code" aria-label="Order code" />
+            <input type="text" id="lookup-code" maxlength="40" placeholder="Your name" aria-label="Your name" />
             <button class="btn btn--small" type="submit">Find my order</button>
           </form>
           <p class="result" id="lookup-result"></p>
@@ -110,7 +109,7 @@
 
       <section id="slip-view" class="hidden">
         <div class="slip">
-          <p class="eyebrow">Show this at the counter</p>
+          <p class="eyebrow">Ask for this name at the counter</p>
           <p class="code" id="slip-code">—</p>
           <dl>
             <dt id="slip-files-label">Files</dt>
@@ -119,7 +118,7 @@
             <dd class="total" id="slip-total"></dd>
           </dl>
           <p class="closing">
-            The shop can see your files now. Screenshot this code — it's how they'll find your job.
+            The shop can see your files now. Give this name at the counter and they'll find your job.
           </p>
 
           <section class="pay hidden" id="pay">

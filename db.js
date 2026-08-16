@@ -82,6 +82,14 @@ async function init() {
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, id DESC);
     CREATE INDEX IF NOT EXISTS idx_files_order ON order_files(order_id, position);
   `);
+
+  // The code is the student's own name now, so the same one comes back every
+  // time they send something, and a phone number is theirs to give or not.
+  await pool.query(`
+    ALTER TABLE orders DROP CONSTRAINT IF EXISTS orders_code_key;
+    ALTER TABLE orders ALTER COLUMN phone DROP NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_orders_code ON orders(code, id DESC);
+  `);
 }
 
 module.exports = { pool, query, one, all, transaction, init };

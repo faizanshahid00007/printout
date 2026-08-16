@@ -499,7 +499,7 @@ document.getElementById('lookup-form').addEventListener('submit', async (event) 
       })),
     });
   } catch (err) {
-    result.textContent = err.message || 'Could not check that code.';
+    result.textContent = err.message || 'Could not find an order in that name.';
   }
 });
 

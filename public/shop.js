@@ -87,7 +87,7 @@ function jobCard(job) {
       <div>
         <ul class="job-files">${job.files.map(fileRow).join('')}</ul>
         <div class="job-meta">
-          ${spec} · ${money} · ${escape(job.student_name)} · ${escape(job.phone)} · ${when(job.created_at)}
+          ${spec} · ${money} · ${escape(job.student_name)}${job.phone ? ` · ${escape(job.phone)}` : ''} · ${when(job.created_at)}
         </div>
         <div class="job-payment">${payment}</div>
         ${job.notes ? `<div class="job-note">${escape(job.notes)}</div>` : ''}
