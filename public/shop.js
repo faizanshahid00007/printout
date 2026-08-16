@@ -61,7 +61,9 @@ function jobCard(job) {
           job.payment_method === 'razorpay' ? ' · verified online' : ''
         }</span>`
       : job.payment_status === 'claimed'
-        ? `<span class="chip chip--claimed">Says paid ₹${job.price} · ref ${escape(job.payment_ref)} · ${when(job.paid_at)}</span>`
+        ? `<span class="chip chip--claimed">Says paid ₹${job.price} · ${
+            job.payment_ref ? `ref ${escape(job.payment_ref)}` : 'check your app'
+          } · ${when(job.paid_at)}</span>`
         : '<span class="chip chip--unpaid">Unpaid · collect at counter</span>';
 
   // A claim is only a claim until the shop finds it in their bank app, so both

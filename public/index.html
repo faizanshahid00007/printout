@@ -138,25 +138,15 @@
                 </div>
               </div>
 
-              <form id="pay-form">
-                <label for="pay-ref">Reference number from your payment app</label>
-                <div class="lookup-row">
-                  <input type="text" id="pay-ref" inputmode="numeric" maxlength="18"
-                    placeholder="e.g. 412345678901" />
-                  <button class="btn btn--small" type="submit">I've paid</button>
-                </div>
-                <p class="hint">
-                  Your app calls it the UPI reference, transaction ID, or UTR. The shop checks it
-                  against their bank before printing.
-                </p>
-              </form>
+              <button class="btn btn--block" type="button" id="pay-sent">Done — I've paid</button>
               <p class="alert" id="pay-error" role="alert"></p>
             </div>
 
-            <p class="pay-done hidden" id="pay-done"></p>
+            <div class="pay-done hidden" id="pay-done">
+              <p id="pay-done-text"></p>
+              <button class="btn" type="button" id="pay-ok">OK</button>
+            </div>
           </section>
-
-          <button class="btn btn--ghost" type="button" id="another">Start another order</button>
         </div>
       </section>
     </main>

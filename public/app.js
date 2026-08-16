@@ -286,10 +286,12 @@ const payDone = document.getElementById('pay-done');
 const payError = document.getElementById('pay-error');
 let payingCode = null;
 
+const payDoneText = document.getElementById('pay-done-text');
+
 const paidLine = (state) =>
   state.status === 'paid'
-    ? `Paid ₹${state.paid_amount ?? state.amount} — the shop has confirmed it. They can print without you there.`
-    : `₹${state.amount} sent, reference ${state.reference}. The shop confirms it against their bank, then prints — you don't need to wait here.`;
+    ? `Paid ₹${state.paid_amount ?? state.amount} — the shop has confirmed it. They will print your files and call you.`
+    : `The shop will check your ₹${state.amount} payment in their app, print your files, and call you when they are ready.`;
 
 async function loadPayment(code, amount) {
   payingCode = code;
@@ -311,7 +313,7 @@ async function loadPayment(code, amount) {
   if (state.status !== 'unpaid') {
     payStart.classList.add('hidden');
     payDone.classList.remove('hidden');
-    payDone.textContent = paidLine(state);
+    payDoneText.textContent = paidLine(state);
     payLead.textContent = 'Payment';
     return;
   }
@@ -346,27 +348,33 @@ document.getElementById('pay-copy').addEventListener('click', async (event) => {
   }
 });
 
-document.getElementById('pay-form').addEventListener('submit', async (event) => {
-  event.preventDefault();
-  const input = document.getElementById('pay-ref');
+// The student tells us they have paid; the shop is the one who confirms it
+// against their app, so nothing here is treated as settled money.
+document.getElementById('pay-sent').addEventListener('click', async (event) => {
+  const button = event.currentTarget;
   payError.textContent = '';
+  button.disabled = true;
 
   try {
     const response = await fetch(`/api/orders/${encodeURIComponent(payingCode)}/payment`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ reference: input.value.trim() }),
+      body: JSON.stringify({}),
     });
     const data = await response.json();
     if (!response.ok) throw new Error(data.error);
 
     payStart.classList.add('hidden');
     payDone.classList.remove('hidden');
-    payDone.textContent = paidLine({ ...data, reference: input.value.trim() });
+    payDoneText.textContent = paidLine(data);
   } catch (err) {
-    payError.textContent = err.message || 'Could not record that reference.';
+    payError.textContent = err.message || 'Could not record that. Show the payment at the counter.';
+  } finally {
+    button.disabled = false;
   }
 });
+
+document.getElementById('pay-ok').addEventListener('click', goHome);
 
 function showSlip(order) {
   document.querySelector('#slip-view .eyebrow').textContent =
@@ -395,13 +403,16 @@ function showSlip(order) {
   loadPayment(order.code);
 }
 
-document.getElementById('another').addEventListener('click', () => {
+// Back to an empty form, ready for the next order.
+function goHome() {
   form.reset();
   chosen = [];
   render();
+  document.getElementById('lookup-result').textContent = '';
   document.getElementById('slip-view').classList.add('hidden');
   document.getElementById('form-view').classList.remove('hidden');
-});
+  window.scrollTo({ top: 0 });
+}
 
 // --- status lookup ----------------------------------------------------------
 const statusText = {

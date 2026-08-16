@@ -978,11 +978,14 @@ textarea {
 }
 
 .pay-done {
-  font-size: 14px;
-  font-weight: 500;
-  margin: 0;
   padding-left: 12px;
   border-left: 3px solid var(--settled);
+}
+
+.pay-done p {
+  font-size: 15px;
+  font-weight: 500;
+  margin: 0 0 14px;
 }
 
 /* --- footer / status lookup ------------------------------------------------ */

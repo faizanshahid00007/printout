@@ -412,11 +412,11 @@ app.post('/api/orders/:code/payment', async (req, res) => {
     return res.status(409).json({ error: 'The shop has already confirmed this payment' });
   }
 
+  // The student just tells us they have sent it. A reference is accepted if one
+  // is ever supplied, but the shop confirms against their own app either way.
   const reference = String(req.body?.reference || '').replace(/\s/g, '');
-  if (!/^\d{9,18}$/.test(reference)) {
-    return res.status(400).json({
-      error: 'Enter the reference or UTR number from your payment app — digits only',
-    });
+  if (reference && !/^\d{9,18}$/.test(reference)) {
+    return res.status(400).json({ error: 'That reference number does not look right' });
   }
 
   await db.query(
@@ -424,7 +424,7 @@ app.post('/api/orders/:code/payment', async (req, res) => {
         SET payment_status = 'claimed', payment_method = 'upi', payment_ref = $1,
             paid_amount = $2, paid_at = now()
       WHERE id = $3`,
-    [reference, order.price, order.id]
+    [reference || null, order.price, order.id]
   );
 
   res.json({ status: 'claimed', amount: order.price });
