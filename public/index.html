@@ -4,16 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Campus Print Shop — send a PDF to the counter</title>
-    <link rel="icon" href="mark.svg" type="image/svg+xml" />
+    <link rel="icon" href="mark.svg" type="image/svg+xml" media="(prefers-color-scheme: light)" />
+    <link rel="icon" href="mark-inverse.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)" />
     <link rel="apple-touch-icon" href="apple-touch-icon.png" />
     <meta name="theme-color" content="#15171b" />
+    <script src="theme.js"></script>
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="wrap">
       <header class="masthead">
         <h1><img class="mark" src="mark.svg" alt="" width="34" height="34" />Campus <em>Print</em> Shop</h1>
-        <p>Counter&nbsp;1 · Open 9–8</p>
+        <p>Counter&nbsp;1 · Open 9–8 · <button class="tab theme-toggle" type="button">Dark</button></p>
       </header>
 
       <section id="form-view">

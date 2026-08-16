@@ -3,13 +3,17 @@
 :root {
   --paper: #e9eaed;
   --sheet: #ffffff;
+  --tray: #fbfbfc; /* recessed areas: the drop zone, chosen files */
   --toner: #15171b;
   --toner-soft: #5a6069;
+  --on-toner: #ffffff; /* text sitting on a --toner fill */
   --rule: #cbcdd3;
+  --grain: rgba(21, 23, 27, 0.035);
   --magenta: #d6006e;
   --cyan: #0089c7;
   --yellow: #f5b301;
   --settled: #0a7a4b; /* money only — never used for print state */
+  --claimed-ink: #8a5a00;
 
   --display: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
   --body: 'IBM Plex Sans', system-ui, sans-serif;
@@ -17,6 +21,50 @@
 
   --gap: 20px;
   --radius: 3px;
+
+  color-scheme: light;
+}
+
+/* Dark is the same shop after hours: paper goes to graphite, toner goes to
+   light, and the accents lift just enough to hold their contrast. The system
+   preference decides unless the reader has picked a side, which is what the
+   data-theme attribute records. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #131519;
+    --sheet: #1c1f24;
+    --tray: #171a1e;
+    --toner: #eef0f3;
+    --toner-soft: #969da8;
+    --on-toner: #131519;
+    --rule: #333941;
+    --grain: rgba(255, 255, 255, 0.028);
+    --magenta: #ff3d91;
+    --cyan: #35b5e8;
+    --yellow: #f9c74f;
+    --settled: #2ecc8f;
+    --claimed-ink: #f0b542;
+
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --paper: #131519;
+  --sheet: #1c1f24;
+  --tray: #171a1e;
+  --toner: #eef0f3;
+  --toner-soft: #969da8;
+  --on-toner: #131519;
+  --rule: #333941;
+  --grain: rgba(255, 255, 255, 0.028);
+  --magenta: #ff3d91;
+  --cyan: #35b5e8;
+  --yellow: #f9c74f;
+  --settled: #2ecc8f;
+  --claimed-ink: #f0b542;
+
+  color-scheme: dark;
 }
 
 * {
@@ -28,7 +76,7 @@ body {
   background: var(--paper);
   background-image: repeating-linear-gradient(
     90deg,
-    rgba(21, 23, 27, 0.035) 0 1px,
+    var(--grain) 0 1px,
     transparent 1px 4px
   );
   color: var(--toner);
@@ -84,6 +132,18 @@ a {
   margin-right: 10px;
 }
 
+/* The mark is a near-black tile, which would sink into a dark masthead, so the
+   inverted artwork takes over there. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) .mark {
+    content: url('mark-inverse.svg');
+  }
+}
+
+:root[data-theme='dark'] .mark {
+  content: url('mark-inverse.svg');
+}
+
 .masthead h1 em {
   font-style: normal;
   color: var(--magenta);
@@ -111,7 +171,7 @@ a {
   border-top: 4px solid var(--toner);
   border-radius: var(--radius);
   padding: 24px;
-  box-shadow: 0 1px 0 rgba(21, 23, 27, 0.06), 0 12px 28px -22px rgba(21, 23, 27, 0.5);
+  box-shadow: 0 1px 0 var(--grain), 0 12px 28px -22px rgba(0, 0, 0, 0.5);
 }
 
 .field {
@@ -187,14 +247,14 @@ textarea {
   padding: 26px 18px;
   text-align: center;
   cursor: pointer;
-  background: #fbfbfc;
+  background: var(--tray);
   transition: border-color 0.15s, background 0.15s;
 }
 
 .drop:hover,
 .drop.is-over {
   border-color: var(--magenta);
-  background: #fff;
+  background: var(--sheet);
 }
 
 .drop input {
@@ -220,7 +280,7 @@ textarea {
 .drop.has-file {
   border-style: solid;
   border-color: var(--toner);
-  background: #fff;
+  background: var(--sheet);
   text-align: left;
 }
 
@@ -247,7 +307,7 @@ textarea {
 
 .filerow {
   padding: 10px 12px;
-  background: #fbfbfc;
+  background: var(--tray);
   border: 1px solid var(--rule);
   border-left: 3px solid var(--toner);
   border-radius: var(--radius);
@@ -327,7 +387,7 @@ textarea {
 
 .setall button:hover {
   border-color: var(--toner);
-  background: #fff;
+  background: var(--sheet);
 }
 
 .filerow[data-kind='image'] {
@@ -411,7 +471,7 @@ textarea {
 
 .segmented input:checked + label {
   background: var(--toner);
-  color: #fff;
+  color: var(--on-toner);
 }
 
 .segmented input:checked + label.tint-color {
@@ -435,7 +495,7 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-  color: #fff;
+  color: var(--on-toner);
   background: var(--toner);
   border: 1px solid var(--toner);
   border-radius: var(--radius);
@@ -469,7 +529,7 @@ textarea {
 }
 
 .btn--ghost:hover {
-  color: #fff;
+  color: var(--on-toner);
 }
 
 .btn--small {
@@ -480,7 +540,7 @@ textarea {
 /* --- alerts ---------------------------------------------------------------- */
 .alert {
   border-left: 4px solid var(--magenta);
-  background: #fff;
+  background: var(--sheet);
   padding: 11px 14px;
   font-size: 14px;
   margin-bottom: var(--gap);
@@ -626,6 +686,7 @@ textarea {
   height: auto;
   border: 1px solid var(--rule);
   padding: 8px;
+  /* Stays white in both themes — a QR inverted against dark paper will not scan. */
   background: #fff;
 }
 
@@ -732,7 +793,7 @@ textarea {
 .tab.is-active {
   background: var(--toner);
   border-color: var(--toner);
-  color: #fff;
+  color: var(--on-toner);
 }
 
 .tab b {
@@ -872,7 +933,7 @@ textarea {
 }
 
 .chip--claimed {
-  color: #8a5a00;
+  color: var(--claimed-ink);
   background: rgba(245, 179, 1, 0.14);
 }
 
