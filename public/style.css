@@ -955,6 +955,16 @@ textarea {
   margin-top: 22px;
 }
 
+#pay-later {
+  margin-top: 8px;
+}
+
+/* Green is reserved for money accounted for. Choosing to pay at the counter is
+   settled in a different sense, so it gets the neutral rule instead. */
+.pay-done--counter {
+  border-left-color: var(--rule);
+}
+
 .pay-done {
   padding-left: 12px;
   border-left: 3px solid var(--settled);

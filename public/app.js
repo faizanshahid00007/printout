@@ -320,6 +320,7 @@ async function loadPayment(code, amount) {
 
   payStart.classList.remove('hidden');
   payDone.classList.add('hidden');
+  payDone.classList.remove('pay-done--counter');
 
   if (!state.payable) {
     payLead.textContent = state.reason || 'Pay at the counter.';
@@ -372,6 +373,17 @@ document.getElementById('pay-sent').addEventListener('click', async (event) => {
   } finally {
     button.disabled = false;
   }
+});
+
+// Paying at the counter is a real answer, not a refusal to answer: the order
+// stays exactly as it is and the student gets the same clear ending.
+document.getElementById('pay-later').addEventListener('click', () => {
+  payError.textContent = '';
+  payStart.classList.add('hidden');
+  payDone.classList.remove('hidden');
+  payDone.classList.add('pay-done--counter');
+  payDoneText.textContent =
+    'No problem — pay cash when you collect. Give your name at the counter and they will print your files.';
 });
 
 document.getElementById('pay-ok').addEventListener('click', goHome);
