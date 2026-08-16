@@ -276,8 +276,7 @@ a {
 }
 
 .field > label:not(.drop),
-.field > .field-label,
-.ticket > .field-label {
+.field > .field-label {
   display: block;
   font-family: var(--mono);
   font-size: 11px;
@@ -1518,7 +1517,6 @@ textarea {
      at arm's length. */
   .field > label:not(.drop),
   .field > .field-label,
-  .ticket > .field-label,
   .pay-vpa-label,
   .copies-field span {
     font-size: 12px;
@@ -1624,28 +1622,4 @@ textarea {
   }
 }
 
-/* The form is three moves — files, who you are, send — and saying so out loud
-   makes a long phone page feel short. */
-/* The label rule already sets display, so the number spaces itself with a
-   margin rather than fighting over the layout mode. */
-.step::before {
-  margin-right: 9px;
-  vertical-align: -0.35em;
-  content: attr(data-step);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  height: 20px;
-  font-family: var(--display);
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0;
-  color: var(--on-toner);
-  background: var(--toner);
-  border-radius: 50%;
-}
 
-.ticket > .step {
-  margin-top: 4px;
-}
