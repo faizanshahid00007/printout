@@ -558,12 +558,28 @@ app.get('/api/shop/orders', requireShop, async (req, res) => {
     ).n
   );
 
-  const orders = [];
-  for (const order of rows) {
-    orders.push({ ...order, files: await filesOfOrder(order.id) });
+  // One query for every file in the list rather than one per order — the queue
+  // polls every second, so a hundred round trips a second is not an option.
+  const files = rows.length
+    ? await db.all(
+        `SELECT id, order_id, original_name, kind, size_bytes, pages, copies, color,
+                duplex, price
+           FROM order_files WHERE order_id = ANY($1) ORDER BY order_id, position`,
+        [rows.map((order) => order.id)]
+      )
+    : [];
+
+  const byOrder = new Map();
+  for (const file of files) {
+    const { order_id: orderId, ...rest } = file;
+    if (!byOrder.has(orderId)) byOrder.set(orderId, []);
+    byOrder.get(orderId).push(rest);
   }
 
-  res.json({ orders, counts });
+  res.json({
+    orders: rows.map((order) => ({ ...order, files: byOrder.get(order.id) || [] })),
+    counts,
+  });
 });
 
 app.get('/api/shop/files/:id', requireShop, async (req, res) => {

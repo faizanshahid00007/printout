@@ -5,6 +5,7 @@ const tabs = document.getElementById('tabs');
 
 let filter = 'pending';
 let timer = null;
+let lastMarkup = null;
 
 function show(view) {
   queueView.classList.toggle('hidden', view !== 'queue');
@@ -124,15 +125,22 @@ async function load() {
     tab.textContent = data.counts[tab.parentElement.dataset.status] ?? 0;
   }
 
-  jobsBox.innerHTML = data.orders.length
+  // At one refresh a second, rewriting the list every time would flicker and
+  // swallow a click landing mid-redraw. Redraw only when something changed.
+  const markup = data.orders.length
     ? data.orders.map(jobCard).join('')
     : `<div class="empty"><strong>${emptyStates[filter][0]}</strong>${emptyStates[filter][1]}</div>`;
+
+  if (markup !== lastMarkup) {
+    jobsBox.innerHTML = markup;
+    lastMarkup = markup;
+  }
 }
 
 function startPolling() {
   stopPolling();
   load();
-  timer = setInterval(load, 15000);
+  timer = setInterval(load, 1000);
 }
 
 function stopPolling() {
@@ -144,6 +152,7 @@ tabs.addEventListener('click', (event) => {
   const tab = event.target.closest('.tab[data-status]');
   if (!tab) return;
   filter = tab.dataset.status;
+  lastMarkup = null;
   tabs.querySelectorAll('.tab').forEach((el) => el.classList.toggle('is-active', el === tab));
   load();
 });
