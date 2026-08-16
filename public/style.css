@@ -1187,39 +1187,45 @@ textarea {
 .tag {
   font-family: var(--mono);
   font-size: 13px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  padding: 3px 9px;
-  border: 1px solid var(--rule);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 4px 10px;
+  border: 1px solid transparent;
   border-radius: var(--radius);
-  color: var(--toner);
   white-space: nowrap;
+
+  /* Every setting is filled, so the row reads as a strip of instructions rather
+     than as text. Each one keeps its own colour so the counter can tell them
+     apart at a glance instead of reading them. */
+  background: var(--rule);
+  color: var(--toner);
+}
+
+.tag--pages {
+  background: var(--yellow);
+  color: #15171b;
 }
 
 .tag--copies {
-  font-weight: 600;
-  border-color: var(--toner);
+  background: var(--toner);
+  color: var(--on-toner);
+}
+
+.tag--bw {
+  background: var(--toner-soft);
+  color: var(--on-toner);
 }
 
 .tag--colour {
-  color: var(--on-toner);
   background: var(--magenta);
-  border-color: var(--magenta);
-  font-weight: 600;
+  color: var(--on-toner);
   letter-spacing: 0.08em;
 }
 
 .tag--sides {
-  color: var(--on-toner);
   background: var(--cyan);
-  border-color: var(--cyan);
-  font-weight: 600;
+  color: #15171b;
   letter-spacing: 0.08em;
-}
-
-.tag--pages,
-.tag--bw {
-  color: var(--toner-soft);
 }
 
 /* The amount to collect, sized to be read without leaning in. */
