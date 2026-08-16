@@ -12,6 +12,11 @@ const Razorpay = require('razorpay');
 
 const PORT = process.env.PORT || 3000;
 const SHOP_PASSWORD = process.env.SHOP_PASSWORD || '';
+// Set once the shop has a permanent address. Until then the site asks search
+// engines to stay away, because a tunnel URL that changes every restart would
+// only ever be indexed as a dead link.
+const SITE_URL = (process.env.SITE_URL || '').replace(/\/$/, '');
+
 const UPI_ID = process.env.UPI_ID || '';
 const UPI_NAME = process.env.UPI_NAME || 'Campus Print Shop';
 
@@ -167,6 +172,25 @@ if (columnsOf('orders').includes('copies')) {
 
 const app = express();
 app.use(express.json());
+
+// Search engines: the student page is worth finding, the queue never is.
+app.get('/robots.txt', (req, res) => {
+  res.type('text/plain');
+  res.send(
+    SITE_URL
+      ? `User-agent: *\nAllow: /$\nDisallow: /shop.html\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`
+      : 'User-agent: *\nDisallow: /\n'
+  );
+});
+
+app.get('/sitemap.xml', (req, res) => {
+  if (!SITE_URL) return res.status(404).end();
+  res.type('application/xml');
+  res.send(
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE_URL}/</loc><changefreq>monthly</changefreq></url>\n</urlset>\n`
+  );
+});
+
 app.use(express.static(path.join(__dirname, 'public')));
 
 // --- shop authentication -----------------------------------------------------
