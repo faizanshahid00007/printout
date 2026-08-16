@@ -1,14 +1,17 @@
 require('dotenv').config({ quiet: true });
 
+const os = require('os');
 const path = require('path');
 const fs = require('fs');
 const crypto = require('crypto');
 const express = require('express');
 const multer = require('multer');
-const Database = require('better-sqlite3');
 const { PDFDocument } = require('pdf-lib');
 const QRCode = require('qrcode');
 const Razorpay = require('razorpay');
+
+const db = require('./db');
+const storage = require('./storage');
 
 const PORT = process.env.PORT || 3000;
 const SHOP_PASSWORD = process.env.SHOP_PASSWORD || '';
@@ -18,7 +21,7 @@ const SHOP_PASSWORD = process.env.SHOP_PASSWORD || '';
 const SITE_URL = (process.env.SITE_URL || '').replace(/\/$/, '');
 
 const UPI_ID = process.env.UPI_ID || '';
-const UPI_NAME = process.env.UPI_NAME || 'Campus Print Shop';
+const UPI_NAME = process.env.UPI_NAME || 'Printout';
 
 // Razorpay stays dormant until both keys are present, so the shop can run on UPI
 // alone and switch the gateway on by filling in .env.
@@ -58,116 +61,6 @@ if (!SHOP_PASSWORD) {
     'Set SHOP_PASSWORD in .env before starting — the shop queue cannot be left open.'
   );
   process.exit(1);
-}
-
-const UPLOAD_DIR = path.join(__dirname, 'uploads');
-fs.mkdirSync(UPLOAD_DIR, { recursive: true });
-
-const db = new Database(path.join(__dirname, 'printshop.db'));
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`
-  CREATE TABLE IF NOT EXISTS orders (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    code TEXT NOT NULL UNIQUE,
-    student_name TEXT NOT NULL,
-    phone TEXT NOT NULL,
-    notes TEXT,
-    price INTEGER,
-    quote_needed INTEGER NOT NULL DEFAULT 0,
-    status TEXT NOT NULL DEFAULT 'pending',
-    created_at TEXT NOT NULL DEFAULT (datetime('now'))
-  );
-  CREATE TABLE IF NOT EXISTS order_files (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
-    position INTEGER NOT NULL,
-    original_name TEXT NOT NULL,
-    stored_name TEXT NOT NULL,
-    kind TEXT NOT NULL,
-    size_bytes INTEGER NOT NULL,
-    pages INTEGER,
-    copies INTEGER NOT NULL DEFAULT 1,
-    color INTEGER NOT NULL DEFAULT 0,
-    duplex INTEGER NOT NULL DEFAULT 0,
-    price INTEGER
-  );
-  CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, id DESC);
-  CREATE INDEX IF NOT EXISTS idx_files_order ON order_files(order_id, position);
-`);
-
-// --- schema migrations ------------------------------------------------------
-// Each step is skipped once its shape is already in place, so restarts are safe.
-const columnsOf = (table) =>
-  db
-    .prepare(`SELECT name FROM pragma_table_info('${table}')`)
-    .all()
-    .map((column) => column.name);
-
-// 1. Orders used to hold a single file inline. Move those into order_files.
-if (columnsOf('orders').includes('stored_name')) {
-  const addQuoteColumn = columnsOf('orders').includes('quote_needed')
-    ? ''
-    : 'ALTER TABLE orders ADD COLUMN quote_needed INTEGER NOT NULL DEFAULT 0;';
-  db.exec(`
-    BEGIN;
-    INSERT INTO order_files (order_id, position, original_name, stored_name, kind, size_bytes, pages)
-      SELECT id, 0, original_name, stored_name, 'pdf', size_bytes, pages FROM orders;
-    ${addQuoteColumn}
-    ALTER TABLE orders DROP COLUMN original_name;
-    ALTER TABLE orders DROP COLUMN stored_name;
-    ALTER TABLE orders DROP COLUMN size_bytes;
-    ALTER TABLE orders DROP COLUMN pages;
-    COMMIT;
-  `);
-  console.log('Moved single-file orders into order_files.');
-}
-
-// 2. Copies, ink, and sides were once per order; they belong to each file.
-const fileColumns = columnsOf('order_files');
-const missing = [
-  ['copies', 'INTEGER NOT NULL DEFAULT 1'],
-  ['color', 'INTEGER NOT NULL DEFAULT 0'],
-  ['duplex', 'INTEGER NOT NULL DEFAULT 0'],
-  ['price', 'INTEGER'],
-].filter(([name]) => !fileColumns.includes(name));
-
-for (const [name, type] of missing) {
-  db.exec(`ALTER TABLE order_files ADD COLUMN ${name} ${type}`);
-}
-
-// 3. Payment lives on the order: unpaid → claimed (student says they sent it) → paid
-//    (shop matched it in their bank app).
-const paymentColumns = [
-  ['payment_status', "TEXT NOT NULL DEFAULT 'unpaid'"],
-  ['payment_method', 'TEXT'],
-  ['payment_ref', 'TEXT'],
-  ['paid_amount', 'INTEGER'],
-  ['paid_at', 'TEXT'],
-  ['payment_order_id', 'TEXT'],
-].filter(([name]) => !columnsOf('orders').includes(name));
-
-for (const [name, type] of paymentColumns) {
-  db.exec(`ALTER TABLE orders ADD COLUMN ${name} ${type}`);
-}
-
-if (columnsOf('orders').includes('copies')) {
-  db.exec(`
-    BEGIN;
-    UPDATE order_files SET
-      copies = (SELECT copies FROM orders WHERE orders.id = order_files.order_id),
-      color  = (SELECT color  FROM orders WHERE orders.id = order_files.order_id),
-      duplex = (SELECT duplex FROM orders WHERE orders.id = order_files.order_id);
-    UPDATE order_files SET
-      price = pages * copies * (CASE WHEN color = 1 THEN ${RATE_COLOR} ELSE ${RATE_BW} END)
-      WHERE pages IS NOT NULL;
-    ALTER TABLE orders DROP COLUMN copies;
-    ALTER TABLE orders DROP COLUMN color;
-    ALTER TABLE orders DROP COLUMN duplex;
-    COMMIT;
-  `);
-  console.log('Moved print settings from orders onto each file.');
 }
 
 const app = express();
@@ -226,6 +119,7 @@ app.post('/api/shop/login', (req, res) => {
   res.cookie('shop_session', token, {
     httpOnly: true,
     sameSite: 'lax',
+    secure: Boolean(SITE_URL),
     path: '/',
     maxAge: 12 * 60 * 60 * 1000,
   });
@@ -245,9 +139,12 @@ app.get('/api/shop/session', (req, res) => {
 });
 
 // --- student uploads ---------------------------------------------------------
+// Uploads land in the system temp folder just long enough to be counted and
+// handed to storage. Nothing of value stays on this machine's disk, which is
+// what lets the shop run on a host that wipes it.
 const upload = multer({
   storage: multer.diskStorage({
-    destination: UPLOAD_DIR,
+    destination: os.tmpdir(),
     filename: (req, file, cb) => {
       const ext = path.extname(file.originalname).toLowerCase();
       cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
@@ -261,26 +158,25 @@ const upload = multer({
   },
 });
 
-function newOrderCode() {
+async function newOrderCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no look-alike characters
-  const exists = db.prepare('SELECT 1 FROM orders WHERE code = ?');
   for (let attempt = 0; attempt < 50; attempt += 1) {
     let code = '';
     for (let i = 0; i < 5; i += 1) {
       code += alphabet[crypto.randomInt(alphabet.length)];
     }
-    if (!exists.get(code)) return code;
+    const clash = await db.one('SELECT 1 FROM orders WHERE code = $1', [code]);
+    if (!clash) return code;
   }
   throw new Error('Could not allocate an order code');
 }
 
 // Pages per file: read out of a PDF, one per image, unknowable for Word — a .docx
 // repaginates on whatever machine opens it, so the counter quotes those by hand.
-async function countPages(filePath, kind) {
+async function countPages(bytes, kind) {
   if (kind === 'image') return 1;
   if (kind === 'word') return null;
   try {
-    const bytes = await fs.promises.readFile(filePath);
     const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
     return pdf.getPageCount();
   } catch {
@@ -291,11 +187,11 @@ async function countPages(filePath, kind) {
 app.post('/api/orders', (req, res) => {
   upload.array('files', MAX_FILES)(req, res, async (err) => {
     const files = req.files || [];
-    const cleanup = () =>
+    const scratch = () =>
       Promise.all(files.map((file) => fs.promises.unlink(file.path).catch(() => {})));
 
     if (err) {
-      await cleanup();
+      await scratch();
       const message =
         err.code === 'LIMIT_FILE_SIZE'
           ? `One of those files is larger than ${MAX_MB} MB`
@@ -312,7 +208,7 @@ app.post('/api/orders', (req, res) => {
     const totalBytes = files.reduce((sum, file) => sum + file.size, 0);
 
     const reject = async (message) => {
-      await cleanup();
+      await scratch();
       res.status(400).json({ error: message });
     };
 
@@ -341,95 +237,109 @@ app.post('/api/orders', (req, res) => {
       }
     }
 
-    const counted = [];
-    for (const [index, file] of files.entries()) {
-      const kind = KINDS[path.extname(file.originalname).toLowerCase()].kind;
-      const pages = await countPages(file.path, kind);
-      const copies = Number.parseInt(specs[index].copies, 10);
-      const color = specs[index].color === 'color';
-      const duplex = specs[index].duplex === 'double';
-      counted.push({
-        file,
-        kind,
-        pages,
-        copies,
-        color,
-        duplex,
-        price: pages === null ? null : pages * copies * (color ? RATE_COLOR : RATE_BW),
-      });
-    }
+    const stored = [];
+    try {
+      const counted = [];
+      for (const [index, file] of files.entries()) {
+        const type = KINDS[path.extname(file.originalname).toLowerCase()];
+        const bytes = await fs.promises.readFile(file.path);
+        const pages = await countPages(bytes, type.kind);
+        const copies = Number.parseInt(specs[index].copies, 10);
+        const color = specs[index].color === 'color';
+        const duplex = specs[index].duplex === 'double';
 
-    const quoteNeeded = counted.some((item) => item.price === null);
-    const price = counted.reduce((sum, item) => sum + (item.price ?? 0), 0);
-    const code = newOrderCode();
+        await storage.save(file.filename, bytes, type.mime);
+        stored.push(file.filename);
 
-    const save = db.transaction(() => {
-      const { lastInsertRowid } = db
-        .prepare(
+        counted.push({
+          file,
+          kind: type.kind,
+          pages,
+          copies,
+          color,
+          duplex,
+          price: pages === null ? null : pages * copies * (color ? RATE_COLOR : RATE_BW),
+        });
+      }
+
+      const quoteNeeded = counted.some((item) => item.price === null);
+      const price = counted.reduce((sum, item) => sum + (item.price ?? 0), 0);
+      const code = await newOrderCode();
+
+      await db.transaction(async (client) => {
+        const { rows } = await client.query(
           `INSERT INTO orders (code, student_name, phone, notes, price, quote_needed)
-           VALUES (?, ?, ?, ?, ?, ?)`
-        )
-        .run(code, studentName, phone, notes || null, price, quoteNeeded ? 1 : 0);
-
-      const insertFile = db.prepare(
-        `INSERT INTO order_files
-          (order_id, position, original_name, stored_name, kind, size_bytes, pages,
-           copies, color, duplex, price)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
-      );
-      counted.forEach((item, index) => {
-        insertFile.run(
-          lastInsertRowid,
-          index,
-          item.file.originalname.slice(0, 200),
-          item.file.filename,
-          item.kind,
-          item.file.size,
-          item.pages,
-          item.copies,
-          item.color ? 1 : 0,
-          item.duplex ? 1 : 0,
-          item.price
+           VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+          [code, studentName, phone, notes || null, price, quoteNeeded]
         );
+
+        for (const [index, item] of counted.entries()) {
+          await client.query(
+            `INSERT INTO order_files
+              (order_id, position, original_name, stored_name, kind, size_bytes, pages,
+               copies, color, duplex, price)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+            [
+              rows[0].id,
+              index,
+              item.file.originalname.slice(0, 200),
+              item.file.filename,
+              item.kind,
+              item.file.size,
+              item.pages,
+              item.copies,
+              item.color,
+              item.duplex,
+              item.price,
+            ]
+          );
+        }
       });
-    });
 
-    save();
-
-    res.status(201).json({
-      code,
-      price,
-      quoteNeeded,
-      files: counted.map((item) => ({
-        name: item.file.originalname,
-        kind: item.kind,
-        pages: item.pages,
-        copies: item.copies,
-        color: item.color,
-        duplex: item.duplex,
-        price: item.price,
-      })),
-    });
+      res.status(201).json({
+        code,
+        price,
+        quoteNeeded,
+        files: counted.map((item) => ({
+          name: item.file.originalname,
+          kind: item.kind,
+          pages: item.pages,
+          copies: item.copies,
+          color: item.color,
+          duplex: item.duplex,
+          price: item.price,
+        })),
+      });
+    } catch (saveError) {
+      // An order that never made it into the database must not leave files
+      // behind in storage.
+      console.error('Order failed:', saveError.message);
+      await Promise.all(stored.map((name) => storage.remove(name).catch(() => {})));
+      res.status(500).json({ error: 'Could not save that order. Try again in a moment.' });
+    } finally {
+      await scratch();
+    }
   });
 });
 
-const filesOfOrder = db.prepare(
-  `SELECT id, original_name, kind, size_bytes, pages, copies, color, duplex, price
-     FROM order_files WHERE order_id = ? ORDER BY position`
-);
+const filesOfOrder = (orderId) =>
+  db.all(
+    `SELECT id, original_name, kind, size_bytes, pages, copies, color, duplex, price
+       FROM order_files WHERE order_id = $1 ORDER BY position`,
+    [orderId]
+  );
 
 // Students check their own order with the code they were given.
-app.get('/api/orders/:code', (req, res) => {
-  const order = db
-    .prepare(
-      `SELECT id, code, student_name, price, quote_needed, status, created_at,
-              payment_status, payment_method, payment_ref, paid_amount
-         FROM orders WHERE code = ?`
-    )
-    .get(String(req.params.code).toUpperCase());
+app.get('/api/orders/:code', async (req, res) => {
+  const order = await db.one(
+    `SELECT id, code, student_name, price, quote_needed, status, created_at,
+            payment_status, payment_method, payment_ref, paid_amount
+       FROM orders WHERE code = $1`,
+    [String(req.params.code).toUpperCase()]
+  );
   if (!order) return res.status(404).json({ error: 'No order with that code' });
 
-  const files = filesOfOrder.all(order.id);
+  const files = await filesOfOrder(order.id);
   delete order.id;
   res.json({ ...order, files });
 });
@@ -439,11 +349,13 @@ app.get('/api/orders/:code', (req, res) => {
 // payment on its own: the student records the reference and the shop matches it
 // against their bank app. The order code is the only thing gating these routes,
 // which is why a claim is never treated as settled money.
-const findOrderByCode = db.prepare(
-  `SELECT id, code, price, quote_needed, payment_status, payment_method, payment_ref,
-          paid_amount, payment_order_id
-     FROM orders WHERE code = ?`
-);
+const findOrderByCode = (code) =>
+  db.one(
+    `SELECT id, code, price, quote_needed, payment_status, payment_method, payment_ref,
+            paid_amount, payment_order_id
+       FROM orders WHERE code = $1`,
+    [String(code).toUpperCase()]
+  );
 
 function upiLink(order) {
   const params = new URLSearchParams({
@@ -476,7 +388,7 @@ function paymentState(order) {
 }
 
 app.get('/api/orders/:code/payment', async (req, res) => {
-  const order = findOrderByCode.get(String(req.params.code).toUpperCase());
+  const order = await findOrderByCode(req.params.code);
   if (!order) return res.status(404).json({ error: 'No order with that code' });
 
   const state = paymentState(order);
@@ -490,8 +402,8 @@ app.get('/api/orders/:code/payment', async (req, res) => {
   });
 });
 
-app.post('/api/orders/:code/payment', (req, res) => {
-  const order = findOrderByCode.get(String(req.params.code).toUpperCase());
+app.post('/api/orders/:code/payment', async (req, res) => {
+  const order = await findOrderByCode(req.params.code);
   if (!order) return res.status(404).json({ error: 'No order with that code' });
   if (!paymentState(order).payable) {
     return res.status(400).json({ error: 'This order is paid at the counter' });
@@ -507,12 +419,13 @@ app.post('/api/orders/:code/payment', (req, res) => {
     });
   }
 
-  db.prepare(
+  await db.query(
     `UPDATE orders
-        SET payment_status = 'claimed', payment_method = 'upi', payment_ref = ?,
-            paid_amount = ?, paid_at = datetime('now')
-      WHERE id = ?`
-  ).run(reference, order.price, order.id);
+        SET payment_status = 'claimed', payment_method = 'upi', payment_ref = $1,
+            paid_amount = $2, paid_at = now()
+      WHERE id = $3`,
+    [reference, order.price, order.id]
+  );
 
   res.json({ status: 'claimed', amount: order.price });
 });
@@ -523,7 +436,7 @@ app.post('/api/orders/:code/payment', (req, res) => {
 app.post('/api/orders/:code/razorpay', async (req, res) => {
   if (!razorpay) return res.status(404).json({ error: 'Card payment is not switched on' });
 
-  const order = findOrderByCode.get(String(req.params.code).toUpperCase());
+  const order = await findOrderByCode(req.params.code);
   if (!order) return res.status(404).json({ error: 'No order with that code' });
   if (order.quote_needed || order.price <= 0) {
     return res.status(400).json({ error: 'This order is priced at the counter' });
@@ -545,10 +458,10 @@ app.post('/api/orders/:code/razorpay', async (req, res) => {
       notes: { code: order.code },
     });
 
-    db.prepare('UPDATE orders SET payment_order_id = ? WHERE id = ?').run(
+    await db.query('UPDATE orders SET payment_order_id = $1 WHERE id = $2', [
       gatewayOrder.id,
-      order.id
-    );
+      order.id,
+    ]);
 
     res.json({
       keyId: RAZORPAY_KEY_ID,
@@ -565,16 +478,16 @@ app.post('/api/orders/:code/razorpay', async (req, res) => {
     const authFailed = err?.statusCode === 401;
     res.status(authFailed ? 401 : 500).json({
       error: authFailed
-        ? 'The shop\'s payment keys were rejected. Pay by UPI or at the counter.'
+        ? "The shop's payment keys were rejected. Pay by UPI or at the counter."
         : 'Could not reach the payment gateway. Pay by UPI or at the counter.',
     });
   }
 });
 
-app.post('/api/orders/:code/razorpay/verify', (req, res) => {
+app.post('/api/orders/:code/razorpay/verify', async (req, res) => {
   if (!razorpay) return res.status(404).json({ error: 'Card payment is not switched on' });
 
-  const order = findOrderByCode.get(String(req.params.code).toUpperCase());
+  const order = await findOrderByCode(req.params.code);
   if (!order) return res.status(404).json({ error: 'No order with that code' });
 
   const gatewayOrderId = String(req.body?.razorpay_order_id || '');
@@ -600,18 +513,19 @@ app.post('/api/orders/:code/razorpay/verify', (req, res) => {
 
   if (!ok) return res.status(400).json({ error: 'Payment could not be verified' });
 
-  db.prepare(
+  await db.query(
     `UPDATE orders
-        SET payment_status = 'paid', payment_method = 'razorpay', payment_ref = ?,
-            paid_amount = ?, paid_at = datetime('now')
-      WHERE id = ?`
-  ).run(paymentId, order.price, order.id);
+        SET payment_status = 'paid', payment_method = 'razorpay', payment_ref = $1,
+            paid_amount = $2, paid_at = now()
+      WHERE id = $3`,
+    [paymentId, order.price, order.id]
+  );
 
   res.json({ status: 'paid', amount: order.price, reference: paymentId });
 });
 
 // --- shop queue -------------------------------------------------------------
-app.get('/api/shop/orders', requireShop, (req, res) => {
+app.get('/api/shop/orders', requireShop, async (req, res) => {
   const status = String(req.query.status || 'all');
   const allowed = ['pending', 'printed', 'collected'];
 
@@ -619,39 +533,47 @@ app.get('/api/shop/orders', requireShop, (req, res) => {
   // present, so it gets its own view rather than being buried in Waiting.
   const rows =
     status === 'prepaid'
-      ? db
-          .prepare(
-            `SELECT * FROM orders
-              WHERE status = 'pending' AND payment_status IN ('paid', 'claimed')
-              ORDER BY id DESC LIMIT 200`
-          )
-          .all()
+      ? await db.all(
+          `SELECT * FROM orders
+            WHERE status = 'pending' AND payment_status IN ('paid', 'claimed')
+            ORDER BY id DESC LIMIT 200`
+        )
       : allowed.includes(status)
-        ? db.prepare('SELECT * FROM orders WHERE status = ? ORDER BY id DESC LIMIT 200').all(status)
-        : db.prepare('SELECT * FROM orders ORDER BY id DESC LIMIT 200').all();
+        ? await db.all('SELECT * FROM orders WHERE status = $1 ORDER BY id DESC LIMIT 200', [
+            status,
+          ])
+        : await db.all('SELECT * FROM orders ORDER BY id DESC LIMIT 200');
 
-  const counts = db
-    .prepare('SELECT status, COUNT(*) AS n FROM orders GROUP BY status')
-    .all()
-    .reduce((acc, row) => ({ ...acc, [row.status]: row.n }), {});
+  const counts = (await db.all('SELECT status, COUNT(*) AS n FROM orders GROUP BY status')).reduce(
+    (acc, row) => ({ ...acc, [row.status]: Number(row.n) }),
+    {}
+  );
 
-  counts.prepaid = db
-    .prepare(
-      `SELECT COUNT(*) AS n FROM orders
-        WHERE status = 'pending' AND payment_status IN ('paid', 'claimed')`
-    )
-    .get().n;
+  counts.prepaid = Number(
+    (
+      await db.one(
+        `SELECT COUNT(*) AS n FROM orders
+          WHERE status = 'pending' AND payment_status IN ('paid', 'claimed')`
+      )
+    ).n
+  );
 
-  res.json({
-    orders: rows.map((order) => ({ ...order, files: filesOfOrder.all(order.id) })),
-    counts,
-  });
+  const orders = [];
+  for (const order of rows) {
+    orders.push({ ...order, files: await filesOfOrder(order.id) });
+  }
+
+  res.json({ orders, counts });
 });
 
-app.get('/api/shop/files/:id', requireShop, (req, res) => {
-  const file = db
-    .prepare('SELECT stored_name, original_name FROM order_files WHERE id = ?')
-    .get(req.params.id);
+app.get('/api/shop/files/:id', requireShop, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Bad file id' });
+
+  const file = await db.one(
+    'SELECT stored_name, original_name FROM order_files WHERE id = $1',
+    [id]
+  );
   if (!file) return res.status(404).json({ error: 'File not found' });
 
   const type = KINDS[path.extname(file.stored_name).toLowerCase()] || {
@@ -659,53 +581,63 @@ app.get('/api/shop/files/:id', requireShop, (req, res) => {
     inline: false,
   };
   const safeName = file.original_name.replace(/[^\w.\- ]/g, '_');
-  res.type(type.mime);
-  res.setHeader(
-    'Content-Disposition',
-    `${type.inline ? 'inline' : 'attachment'}; filename="${safeName}"`
-  );
-  res.sendFile(path.join(UPLOAD_DIR, file.stored_name));
+
+  try {
+    const bytes = await storage.read(file.stored_name);
+    res.type(type.mime);
+    res.setHeader(
+      'Content-Disposition',
+      `${type.inline ? 'inline' : 'attachment'}; filename="${safeName}"`
+    );
+    res.send(bytes);
+  } catch (readError) {
+    console.error('Could not read', file.stored_name, readError.message);
+    res.status(404).json({ error: 'That file is no longer in storage' });
+  }
 });
 
 // The shop has the final word on money: confirm what they can see in their bank
 // app, or push it back to unpaid if the reference does not check out.
-app.post('/api/shop/orders/:id/payment', requireShop, (req, res) => {
+app.post('/api/shop/orders/:id/payment', requireShop, async (req, res) => {
   const status = String(req.body?.status || '');
   if (!['unpaid', 'paid'].includes(status)) {
     return res.status(400).json({ error: 'Unknown payment status' });
   }
 
-  const order = db.prepare('SELECT id, price FROM orders WHERE id = ?').get(req.params.id);
+  const order = await db.one('SELECT id, price FROM orders WHERE id = $1', [req.params.id]);
   if (!order) return res.status(404).json({ error: 'Order not found' });
 
   if (status === 'paid') {
-    db.prepare(
+    await db.query(
       `UPDATE orders
-          SET payment_status = 'paid', paid_amount = COALESCE(paid_amount, ?),
-              paid_at = COALESCE(paid_at, datetime('now'))
-        WHERE id = ?`
-    ).run(order.price, order.id);
+          SET payment_status = 'paid', paid_amount = COALESCE(paid_amount, $1),
+              paid_at = COALESCE(paid_at, now())
+        WHERE id = $2`,
+      [order.price, order.id]
+    );
   } else {
-    db.prepare(
+    await db.query(
       `UPDATE orders
           SET payment_status = 'unpaid', payment_method = NULL, payment_ref = NULL,
               paid_amount = NULL, paid_at = NULL
-        WHERE id = ?`
-    ).run(order.id);
+        WHERE id = $1`,
+      [order.id]
+    );
   }
 
   res.json({ ok: true });
 });
 
-app.post('/api/shop/orders/:id/status', requireShop, (req, res) => {
+app.post('/api/shop/orders/:id/status', requireShop, async (req, res) => {
   const status = String(req.body?.status || '');
   if (!['pending', 'printed', 'collected'].includes(status)) {
     return res.status(400).json({ error: 'Unknown status' });
   }
-  const result = db
-    .prepare('UPDATE orders SET status = ? WHERE id = ?')
-    .run(status, req.params.id);
-  if (result.changes === 0) return res.status(404).json({ error: 'Order not found' });
+  const result = await db.query('UPDATE orders SET status = $1 WHERE id = $2', [
+    status,
+    req.params.id,
+  ]);
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Order not found' });
   res.json({ ok: true });
 });
 
@@ -721,7 +653,16 @@ app.get('/api/config', (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`Print shop running at http://localhost:${PORT}`);
-  console.log(`Shop dashboard at http://localhost:${PORT}/shop.html`);
+async function start() {
+  await db.init();
+  await storage.ready();
+  app.listen(PORT, () => {
+    console.log(`Printout running on port ${PORT}`);
+    console.log(`Files: ${storage.isRemote ? 'object storage' : 'local uploads folder'}`);
+  });
+}
+
+start().catch((err) => {
+  console.error('Could not start:', err.message);
+  process.exit(1);
 });

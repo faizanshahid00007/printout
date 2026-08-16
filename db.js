@@ -1,0 +1,87 @@
+const { Pool } = require('pg');
+
+// Render and Supabase both hand out a connection string. Locally it points at a
+// throwaway Postgres; in production it is the Supabase pooler.
+const connectionString = process.env.DATABASE_URL || '';
+
+if (!connectionString) {
+  console.error('Set DATABASE_URL in .env — the shop needs a database to run.');
+  process.exit(1);
+}
+
+const pool = new Pool({
+  connectionString,
+  // Managed Postgres presents a certificate the container does not have a root
+  // for; the connection is still encrypted.
+  ssl: /localhost|127\.0\.0\.1/.test(connectionString) ? false : { rejectUnauthorized: false },
+  max: 5,
+});
+
+const query = (text, params) => pool.query(text, params);
+
+async function one(text, params) {
+  const { rows } = await pool.query(text, params);
+  return rows[0] || null;
+}
+
+async function all(text, params) {
+  const { rows } = await pool.query(text, params);
+  return rows;
+}
+
+async function transaction(work) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const result = await work(client);
+    await client.query('COMMIT');
+    return result;
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+async function init() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS orders (
+      id SERIAL PRIMARY KEY,
+      code TEXT NOT NULL UNIQUE,
+      student_name TEXT NOT NULL,
+      phone TEXT NOT NULL,
+      notes TEXT,
+      price INTEGER,
+      quote_needed BOOLEAN NOT NULL DEFAULT FALSE,
+      status TEXT NOT NULL DEFAULT 'pending',
+      payment_status TEXT NOT NULL DEFAULT 'unpaid',
+      payment_method TEXT,
+      payment_ref TEXT,
+      payment_order_id TEXT,
+      paid_amount INTEGER,
+      paid_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+
+    CREATE TABLE IF NOT EXISTS order_files (
+      id SERIAL PRIMARY KEY,
+      order_id INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+      position INTEGER NOT NULL,
+      original_name TEXT NOT NULL,
+      stored_name TEXT NOT NULL,
+      kind TEXT NOT NULL,
+      size_bytes INTEGER NOT NULL,
+      pages INTEGER,
+      copies INTEGER NOT NULL DEFAULT 1,
+      color BOOLEAN NOT NULL DEFAULT FALSE,
+      duplex BOOLEAN NOT NULL DEFAULT FALSE,
+      price INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, id DESC);
+    CREATE INDEX IF NOT EXISTS idx_files_order ON order_files(order_id, position);
+  `);
+}
+
+module.exports = { pool, query, one, all, transaction, init };

@@ -17,8 +17,8 @@ function escape(text) {
 
 function when(iso) {
   if (!iso) return '';
-  // SQLite hands back "YYYY-MM-DD HH:MM:SS" in UTC.
-  const date = new Date(`${iso.replace(' ', 'T')}Z`);
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return '';
   const today = new Date().toDateString() === date.toDateString();
   const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   return today ? time : `${date.toLocaleDateString([], { day: 'numeric', month: 'short' })} ${time}`;

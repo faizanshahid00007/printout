@@ -1,0 +1,32 @@
+services:
+  - type: web
+    name: printout
+    runtime: node
+    plan: free
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/config
+    envVars:
+      # Set these in the Render dashboard — they are secrets and never belong in git.
+      - key: DATABASE_URL
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_KEY
+        sync: false
+      - key: SHOP_PASSWORD
+        sync: false
+      - key: UPI_ID
+        sync: false
+      - key: RAZORPAY_KEY_ID
+        sync: false
+      - key: RAZORPAY_KEY_SECRET
+        sync: false
+      - key: SITE_URL
+        sync: false
+      - key: UPI_NAME
+        value: Printout
+      - key: RATE_BW
+        value: "2"
+      - key: RATE_COLOR
+        value: "10"
