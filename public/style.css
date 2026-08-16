@@ -949,32 +949,10 @@ textarea {
   white-space: nowrap;
 }
 
-#pay-form {
-  margin-top: 16px;
-}
-
-#pay-form label {
-  display: block;
-  font-family: var(--mono);
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--toner-soft);
-  margin-bottom: 7px;
-}
-
-.lookup-row {
-  display: flex;
-  gap: 8px;
-}
-
-.lookup-row input {
-  font-family: var(--mono);
-  letter-spacing: 0.05em;
-}
-
-.lookup-row .btn {
-  white-space: nowrap;
+/* The confirm button closes the sequence — scan, or copy the ID, then say you
+   have paid — so it sits clear of the block above it. */
+#pay-sent {
+  margin-top: 22px;
 }
 
 .pay-done {
