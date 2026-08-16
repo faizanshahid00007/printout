@@ -31,11 +31,20 @@ fetch('/api/config')
   .then((res) => res.json())
   .then((data) => {
     config = data;
-    document.getElementById('max-size').textContent = data.maxMb;
-    document.getElementById('rates').textContent =
-      `₹${data.rateBw} per page black & white, ₹${data.rateColor} per page colour. Pay at the counter.`;
+
+    // The two prices are the line students actually look for, so each is
+    // written in the ink it buys.
+    document.getElementById('rates').innerHTML =
+      `<span class="rate-bw">₹${data.rateBw} a page</span> black &amp; white` +
+      ` · <span class="rate-colour">₹${data.rateColor} a page</span> colour`;
+
+    // Redraw with the real limits: the drop zone was already written once from
+    // the defaults, which replaced the placeholder markup inside it.
+    render();
   })
-  .catch(() => {});
+  .catch(() => {
+    // The page still works on the built-in defaults if config cannot be read.
+  });
 
 function showError(message) {
   errorBox.textContent = message || '';
