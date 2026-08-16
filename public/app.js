@@ -79,7 +79,7 @@ function rowMarkup(entry, index) {
     <label for="side-${index}-${value}">${label}</label>`;
 
   return `
-    <li class="filerow" data-kind="${kind}">
+    <li class="filerow" data-kind="${kind}" data-ink="${entry.color}">
       <div class="filerow-head">
         <span class="filerow-kind">${kindLabel[kind]}</span>
         <span class="filerow-name">${name}</span>
@@ -179,6 +179,10 @@ fileList.addEventListener('change', (event) => {
     entry[control.dataset.set] = control.value;
   }
 
+  // The row's edge carries the ink choice, so a colour file is obvious in a
+  // stack of black-and-white ones without re-rendering the list.
+  control.closest('.filerow').dataset.ink = entry.color;
+
   lastUsed = { color: entry.color, duplex: entry.duplex, copies: entry.copies };
   updateSummary();
 });
@@ -245,6 +249,7 @@ form.addEventListener('submit', async (event) => {
 
   const label = submit.textContent;
   submit.disabled = true;
+  submit.classList.add('is-sending');
   submit.textContent = 'Sending…';
 
   try {
@@ -256,6 +261,7 @@ form.addEventListener('submit', async (event) => {
     showError(err.message);
   } finally {
     submit.disabled = false;
+    submit.classList.remove('is-sending');
     submit.textContent = label;
   }
 });
