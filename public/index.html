@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Campus Print Shop — send a PDF to the counter</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <header class="masthead">
+        <h1>Campus <em>Print</em> Shop</h1>
+        <p>Counter&nbsp;1 · Open 9–8</p>
+      </header>
+
+      <section id="form-view">
+        <p class="lede">
+          Send your files from here — PDFs, photos, Word documents — then collect the prints at the
+          counter with the code we give you. No queue, no pen drive.
+        </p>
+
+        <div class="alert" id="error" role="alert"></div>
+
+        <form class="ticket" id="order-form" novalidate>
+          <div class="field">
+            <span class="field-label">Files</span>
+            <div class="setall hidden" id="setall">
+              <span>Set every file to</span>
+              <button type="button" data-all="bw">B&amp;W</button>
+              <button type="button" data-all="color">Colour</button>
+              <button type="button" data-all="single">Single side</button>
+              <button type="button" data-all="double">Both sides</button>
+            </div>
+            <ul class="filelist" id="filelist"></ul>
+            <label class="drop" id="drop" for="file">
+              <input
+                type="file"
+                id="file"
+                multiple
+                accept=".pdf,.jpg,.jpeg,.png,.webp,.heic,.heif,.doc,.docx"
+              />
+              <strong id="drop-title">Choose files</strong>
+              <span id="drop-sub">
+                or drag them here · PDF, photos, Word · <span id="max-size">25</span> MB each
+              </span>
+            </label>
+          </div>
+
+          <div class="row row--stack">
+            <div class="field">
+              <label for="studentName">Your name</label>
+              <input type="text" id="studentName" name="studentName" autocomplete="name" required />
+            </div>
+            <div class="field">
+              <label for="phone">Phone</label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                inputmode="numeric"
+                autocomplete="tel"
+                placeholder="10 digits"
+                required
+              />
+            </div>
+          </div>
+
+          <p class="hint" id="rates">
+            ₹2 per page black &amp; white, ₹10 per page colour. Pay at the counter.
+          </p>
+
+          <div class="field">
+            <label for="notes">Instructions for the shop <span style="text-transform: none">(optional)</span></label>
+            <textarea id="notes" name="notes" maxlength="300" placeholder="Staple top-left, print pages 4–12 only…"></textarea>
+          </div>
+
+          <button class="btn btn--block" type="submit" id="submit">Send to counter</button>
+        </form>
+
+        <section class="lookup">
+          <h2>Already sent something?</h2>
+          <p class="hint">
+            Enter your code to check the status, pay, or bring the slip back up.
+          </p>
+          <form id="lookup-form">
+            <input type="text" id="lookup-code" maxlength="5" placeholder="Order code" aria-label="Order code" />
+            <button class="btn btn--small" type="submit">Find my order</button>
+          </form>
+          <p class="result" id="lookup-result"></p>
+        </section>
+      </section>
+
+      <section id="slip-view" class="hidden">
+        <div class="slip">
+          <p class="eyebrow">Show this at the counter</p>
+          <p class="code" id="slip-code">—</p>
+          <dl>
+            <dt id="slip-files-label">Files</dt>
+            <dd id="slip-files"></dd>
+            <dt>Pay</dt>
+            <dd class="total" id="slip-total"></dd>
+          </dl>
+          <p class="closing">
+            The shop can see your files now. Screenshot this code — it's how they'll find your job.
+          </p>
+
+          <section class="pay hidden" id="pay">
+            <p class="pay-lead" id="pay-lead"></p>
+
+            <div id="pay-start">
+              <button class="btn hidden" type="button" id="pay-card">Pay online</button>
+              <a class="btn hidden" id="pay-link" href="#">Pay by UPI</a>
+              <button class="btn btn--ghost hidden" type="button" id="pay-qr-toggle">Show QR</button>
+              <figure class="pay-qr hidden" id="pay-qr">
+                <img id="pay-qr-img" alt="UPI QR code for this order" />
+                <figcaption>Scan with any UPI app · <span id="pay-upi-id"></span></figcaption>
+              </figure>
+              <form id="pay-form" class="hidden">
+                <label for="pay-ref">Reference number from your payment app</label>
+                <div class="lookup-row">
+                  <input type="text" id="pay-ref" inputmode="numeric" maxlength="18"
+                    placeholder="e.g. 412345678901" />
+                  <button class="btn btn--small" type="submit">I've paid</button>
+                </div>
+                <p class="hint">
+                  Your app calls it the UPI reference, transaction ID, or UTR. The shop checks it
+                  against their bank before printing.
+                </p>
+              </form>
+              <p class="alert" id="pay-error" role="alert"></p>
+            </div>
+
+            <p class="pay-done hidden" id="pay-done"></p>
+          </section>
+
+          <button class="btn btn--ghost" type="button" id="another">Start another order</button>
+        </div>
+      </section>
+    </main>
+
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

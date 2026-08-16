@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Print queue — shop counter</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="wrap wrap--wide hidden" id="queue-view">
+      <header class="masthead">
+        <h1>Print <em>Queue</em></h1>
+        <p><span id="live">Refreshing every 15s</span> · <button class="tab" id="logout" type="button">Sign out</button></p>
+      </header>
+
+      <div class="tabs" id="tabs">
+        <button class="tab is-active" data-status="pending" type="button">Waiting <b>0</b></button>
+        <button class="tab" data-status="prepaid" type="button">Prepaid <b>0</b></button>
+        <button class="tab" data-status="printed" type="button">Printed <b>0</b></button>
+        <button class="tab" data-status="collected" type="button">Collected <b>0</b></button>
+        <button class="tab" data-status="all" type="button">Everything</button>
+      </div>
+
+      <div class="jobs" id="jobs"></div>
+    </main>
+
+    <main class="wrap signin hidden" id="signin-view">
+      <header class="masthead">
+        <h1>Shop <em>Login</em></h1>
+      </header>
+      <div class="alert" id="signin-error" role="alert"></div>
+      <form class="ticket" id="signin-form">
+        <div class="field">
+          <label for="password">Counter password</label>
+          <input type="password" id="password" autocomplete="current-password" required />
+        </div>
+        <button class="btn btn--block" type="submit">Open the queue</button>
+      </form>
+    </main>
+
+    <script src="shop.js"></script>
+  </body>
+</html>

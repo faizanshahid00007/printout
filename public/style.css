@@ -1,0 +1,960 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  --paper: #e9eaed;
+  --sheet: #ffffff;
+  --toner: #15171b;
+  --toner-soft: #5a6069;
+  --rule: #cbcdd3;
+  --magenta: #d6006e;
+  --cyan: #0089c7;
+  --yellow: #f5b301;
+  --settled: #0a7a4b; /* money only — never used for print state */
+
+  --display: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
+  --body: 'IBM Plex Sans', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+
+  --gap: 20px;
+  --radius: 3px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  background-image: repeating-linear-gradient(
+    90deg,
+    rgba(21, 23, 27, 0.035) 0 1px,
+    transparent 1px 4px
+  );
+  color: var(--toner);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--magenta);
+}
+
+:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 2px;
+}
+
+.wrap {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 32px 20px 64px;
+}
+
+.wrap--wide {
+  max-width: 1080px;
+}
+
+/* --- masthead --------------------------------------------------------------- */
+.masthead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--toner);
+  margin-bottom: 28px;
+}
+
+.masthead h1 {
+  font-family: var(--display);
+  font-weight: 700;
+  font-size: clamp(28px, 7vw, 40px);
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.masthead h1 em {
+  font-style: normal;
+  color: var(--magenta);
+}
+
+.masthead p {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin: 0;
+}
+
+.lede {
+  font-size: 17px;
+  color: var(--toner-soft);
+  margin: 0 0 28px;
+}
+
+/* --- job ticket ------------------------------------------------------------- */
+.ticket {
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-top: 4px solid var(--toner);
+  border-radius: var(--radius);
+  padding: 24px;
+  box-shadow: 0 1px 0 rgba(21, 23, 27, 0.06), 0 12px 28px -22px rgba(21, 23, 27, 0.5);
+}
+
+.field {
+  margin-bottom: var(--gap);
+}
+
+.field:last-child {
+  margin-bottom: 0;
+}
+
+.field > label,
+.field > .field-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin-bottom: 7px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--toner-soft);
+  margin: 6px 0 0;
+}
+
+.ticket > .hint,
+.lookup > .hint {
+  margin: 0 0 var(--gap);
+}
+
+input[type='text'],
+input[type='tel'],
+input[type='number'],
+textarea {
+  width: 100%;
+  padding: 11px 12px;
+  font-family: var(--body);
+  font-size: 16px;
+  color: var(--toner);
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+}
+
+input:focus,
+textarea:focus {
+  border-color: var(--cyan);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 68px;
+}
+
+.row {
+  display: flex;
+  gap: 12px;
+}
+
+.row > * {
+  flex: 1;
+  min-width: 0;
+}
+
+/* File drop */
+.drop {
+  display: block;
+  border: 2px dashed var(--rule);
+  border-radius: var(--radius);
+  padding: 26px 18px;
+  text-align: center;
+  cursor: pointer;
+  background: #fbfbfc;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.drop:hover,
+.drop.is-over {
+  border-color: var(--magenta);
+  background: #fff;
+}
+
+.drop input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.drop strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 20px;
+  text-transform: uppercase;
+  letter-spacing: 0.01em;
+}
+
+.drop span {
+  font-size: 13px;
+  color: var(--toner-soft);
+}
+
+.drop.has-file {
+  border-style: solid;
+  border-color: var(--toner);
+  background: #fff;
+  text-align: left;
+}
+
+.drop.has-file strong {
+  font-family: var(--mono);
+  font-size: 14px;
+  text-transform: none;
+  letter-spacing: 0;
+  word-break: break-all;
+}
+
+/* Chosen files, stacked like sheets waiting on the tray */
+.filelist {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.filelist:empty {
+  display: none;
+}
+
+.filerow {
+  padding: 10px 12px;
+  background: #fbfbfc;
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--toner);
+  border-radius: var(--radius);
+}
+
+.filerow-head {
+  display: grid;
+  grid-template-columns: 44px 1fr auto auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.filerow-opts {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 9px;
+}
+
+.copies-field {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.copies-field span {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+}
+
+.copies-field input {
+  width: 56px;
+  padding: 5px 7px;
+  font-family: var(--mono);
+  font-size: 13px;
+  text-align: center;
+}
+
+.segmented--mini label {
+  padding: 5px 9px;
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+
+/* Set-every-file shortcut, only worth showing once there are files to compare */
+.setall {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.setall span {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+}
+
+.setall button {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  padding: 4px 9px;
+  color: var(--toner);
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.setall button:hover {
+  border-color: var(--toner);
+  background: #fff;
+}
+
+.filerow[data-kind='image'] {
+  border-left-color: var(--cyan);
+}
+
+.filerow[data-kind='word'] {
+  border-left-color: var(--yellow);
+}
+
+.filerow-kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+}
+
+.filerow-name {
+  font-size: 14px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filerow-size {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--toner-soft);
+}
+
+.filerow-remove {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  background: none;
+  border: 0;
+  padding: 4px 2px;
+  cursor: pointer;
+}
+
+.filerow-remove:hover {
+  color: var(--magenta);
+}
+
+/* Segmented toggles — the physical switches on the machine */
+.segmented {
+  display: flex;
+  border: 1px solid var(--toner);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+.segmented input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.segmented label {
+  flex: 1;
+  padding: 10px 8px;
+  text-align: center;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+  background: var(--sheet);
+  border-right: 1px solid var(--rule);
+}
+
+.segmented label:last-of-type {
+  border-right: 0;
+}
+
+.segmented input:checked + label {
+  background: var(--toner);
+  color: #fff;
+}
+
+.segmented input:checked + label.tint-color {
+  background: var(--magenta);
+}
+
+.segmented input:focus-visible + label {
+  outline: 2px solid var(--cyan);
+  outline-offset: -2px;
+}
+
+/* --- buttons --------------------------------------------------------------- */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 13px 20px;
+  font-family: var(--display);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fff;
+  background: var(--toner);
+  border: 1px solid var(--toner);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:hover {
+  background: var(--magenta);
+  border-color: var(--magenta);
+}
+
+.btn[disabled] {
+  opacity: 0.45;
+  cursor: default;
+  background: var(--toner);
+  border-color: var(--toner);
+}
+
+.btn--block {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.btn--ghost {
+  color: var(--toner);
+  background: transparent;
+  font-size: 13px;
+  padding: 8px 12px;
+  letter-spacing: 0.06em;
+}
+
+.btn--ghost:hover {
+  color: #fff;
+}
+
+.btn--small {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+/* --- alerts ---------------------------------------------------------------- */
+.alert {
+  border-left: 4px solid var(--magenta);
+  background: #fff;
+  padding: 11px 14px;
+  font-size: 14px;
+  margin-bottom: var(--gap);
+}
+
+.alert:empty {
+  display: none;
+}
+
+/* --- the slip -------------------------------------------------------------- */
+.slip {
+  position: relative;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  padding: 30px 26px 26px;
+  animation: feed 0.5s cubic-bezier(0.16, 0.84, 0.28, 1);
+}
+
+.slip::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto;
+  height: 8px;
+  background:
+    linear-gradient(90deg, var(--cyan) 0 25%, var(--magenta) 25% 50%, var(--yellow) 50% 75%, var(--toner) 75% 100%);
+}
+
+.slip::after {
+  content: '';
+  position: absolute;
+  inset: auto 0 -1px;
+  height: 10px;
+  background: radial-gradient(circle at 5px 10px, transparent 5px, var(--paper) 5px) repeat-x;
+  background-size: 10px 10px;
+}
+
+@keyframes feed {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.slip .eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin: 0 0 4px;
+}
+
+.slip .code {
+  font-family: var(--mono);
+  font-size: clamp(44px, 15vw, 68px);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  margin: 0 0 18px;
+}
+
+.slip dl {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 7px 16px;
+  margin: 0 0 20px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--rule);
+  font-size: 14px;
+}
+
+.slip dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  padding-top: 3px;
+}
+
+.slip dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+.slip .total {
+  font-family: var(--display);
+  font-size: 22px;
+}
+
+.slip-file {
+  font-weight: 500;
+}
+
+.slip-file span {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--toner-soft);
+}
+
+.slip .qualifier {
+  display: block;
+  font-family: var(--body);
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--toner-soft);
+}
+
+.slip .closing {
+  font-size: 14px;
+  color: var(--toner-soft);
+  margin: 0 0 18px;
+}
+
+/* --- paying ---------------------------------------------------------------- */
+.pay {
+  margin: 0 0 20px;
+  padding-top: 18px;
+  border-top: 1px dashed var(--rule);
+}
+
+.pay-lead {
+  font-size: 14px;
+  margin: 0 0 14px;
+}
+
+.pay-qr {
+  margin: 14px 0 0;
+  text-align: center;
+}
+
+.pay-qr img {
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  padding: 8px;
+  background: #fff;
+}
+
+.pay-qr figcaption {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--toner-soft);
+  margin-top: 7px;
+}
+
+#pay-form {
+  margin-top: 16px;
+}
+
+#pay-form label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin-bottom: 7px;
+}
+
+.lookup-row {
+  display: flex;
+  gap: 8px;
+}
+
+.lookup-row input {
+  font-family: var(--mono);
+  letter-spacing: 0.05em;
+}
+
+.lookup-row .btn {
+  white-space: nowrap;
+}
+
+.pay-done {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  padding-left: 12px;
+  border-left: 3px solid var(--settled);
+}
+
+/* --- footer / status lookup ------------------------------------------------ */
+.lookup {
+  margin-top: 28px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+}
+
+.lookup h2 {
+  font-family: var(--display);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 10px;
+}
+
+.lookup form {
+  display: flex;
+  gap: 8px;
+}
+
+.lookup input {
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.lookup .btn {
+  white-space: nowrap;
+}
+
+.lookup .result {
+  font-size: 14px;
+  margin: 10px 0 0;
+}
+
+/* --- shop dashboard -------------------------------------------------------- */
+.tabs {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.tab {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 8px 13px;
+  background: transparent;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--toner-soft);
+  cursor: pointer;
+}
+
+.tab.is-active {
+  background: var(--toner);
+  border-color: var(--toner);
+  color: #fff;
+}
+
+.tab b {
+  font-weight: 600;
+}
+
+.jobs {
+  display: grid;
+  gap: 10px;
+}
+
+.job {
+  display: grid;
+  grid-template-columns: 88px 1fr auto;
+  gap: 18px;
+  align-items: center;
+  background: var(--sheet);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--yellow);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+}
+
+.job[data-status='printed'] {
+  border-left-color: var(--cyan);
+}
+
+.job[data-status='collected'] {
+  border-left-color: var(--rule);
+  opacity: 0.62;
+}
+
+.job .job-code {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.job .job-files {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.job .job-file {
+  display: grid;
+  grid-template-columns: 34px minmax(0, auto) 1fr;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.job .job-file-kind {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--toner-soft);
+}
+
+.job .job-file[data-kind='word'] .job-file-kind {
+  color: var(--yellow);
+}
+
+.job .job-file[data-kind='image'] .job-file-kind {
+  color: var(--cyan);
+}
+
+.job .job-file a {
+  color: var(--toner);
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-decoration-color: var(--rule);
+  text-underline-offset: 3px;
+}
+
+.job .job-file a:hover {
+  color: var(--magenta);
+  text-decoration-color: currentColor;
+}
+
+.job .job-file-spec {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--toner-soft);
+  white-space: nowrap;
+}
+
+/* A colour file inside an otherwise black-and-white batch is the easiest thing
+   for the counter to miss, so it gets its own marker. */
+.job .job-file[data-ink='color'] .job-file-kind::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin-left: 5px;
+  border-radius: 50%;
+  background: var(--magenta);
+  vertical-align: middle;
+}
+
+.job .job-meta {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--toner-soft);
+  margin-top: 3px;
+}
+
+.job .job-meta .flag {
+  color: var(--magenta);
+  font-weight: 500;
+}
+
+.job .job-payment {
+  margin-top: 6px;
+}
+
+.chip {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border: 1px solid currentColor;
+  border-radius: var(--radius);
+}
+
+.chip--paid {
+  color: var(--settled);
+  background: rgba(10, 122, 75, 0.08);
+}
+
+.chip--claimed {
+  color: #8a5a00;
+  background: rgba(245, 179, 1, 0.14);
+}
+
+.chip--unpaid {
+  color: var(--toner-soft);
+}
+
+/* A prepaid job waiting to print can go through with nobody at the counter, so it
+   reads as ready. Printed and collected keep their own stripe. */
+.job[data-status='pending'][data-payment='paid'] {
+  border-left-color: var(--settled);
+}
+
+.job .job-note {
+  font-size: 13px;
+  margin-top: 5px;
+  padding-left: 9px;
+  border-left: 2px solid var(--yellow);
+}
+
+.job .job-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.empty {
+  background: var(--sheet);
+  border: 1px dashed var(--rule);
+  border-radius: var(--radius);
+  padding: 40px 20px;
+  text-align: center;
+  color: var(--toner-soft);
+}
+
+.empty strong {
+  display: block;
+  font-family: var(--display);
+  font-size: 20px;
+  text-transform: uppercase;
+  color: var(--toner);
+  margin-bottom: 4px;
+}
+
+.signin {
+  max-width: 340px;
+  margin: 8vh auto 0;
+}
+
+.hidden {
+  display: none !important;
+}
+
+@media (max-width: 460px) {
+  .filerow-opts {
+    flex-wrap: wrap;
+  }
+
+  .copies-field {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 400px) {
+  /* Name and phone need the full width to stay tappable on small phones;
+     the toggles are short enough to stay paired. */
+  .row--stack {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .job {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .job .job-actions {
+    flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slip {
+    animation: none;
+  }
+
+  * {
+    transition: none !important;
+  }
+}
