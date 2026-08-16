@@ -651,6 +651,24 @@ app.post('/api/shop/orders/:id/payment', requireShop, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Housekeeping: clearing a finished job takes its files with it, so storage does
+// not fill up with prints nobody will ask for again.
+app.delete('/api/shop/orders/:id', requireShop, async (req, res) => {
+  const id = Number.parseInt(req.params.id, 10);
+  if (!Number.isInteger(id)) return res.status(400).json({ error: 'Bad order id' });
+
+  const files = await db.all('SELECT stored_name FROM order_files WHERE order_id = $1', [id]);
+
+  // The row goes first: a file left behind is untidy, but a row pointing at a
+  // file that is already gone is broken.
+  const result = await db.query('DELETE FROM orders WHERE id = $1', [id]);
+  if (result.rowCount === 0) return res.status(404).json({ error: 'Order not found' });
+
+  await Promise.all(files.map((file) => storage.remove(file.stored_name).catch(() => {})));
+
+  res.json({ ok: true, filesRemoved: files.length });
+});
+
 app.post('/api/shop/orders/:id/status', requireShop, async (req, res) => {
   const status = String(req.body?.status || '');
   if (!['pending', 'printed', 'collected'].includes(status)) {

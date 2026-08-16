@@ -1110,9 +1110,34 @@ textarea {
 }
 
 .job-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
   margin-top: 12px;
   padding-top: 10px;
   border-top: 1px solid var(--rule);
+}
+
+.job-foot-left {
+  min-width: 0;
+}
+
+/* Destructive, so it stays outlined and quiet until it is armed. */
+.btn--danger {
+  color: var(--magenta);
+  background: transparent;
+  border-color: var(--magenta);
+}
+
+.btn--danger:hover {
+  color: var(--on-toner);
+  background: var(--magenta);
+}
+
+.btn--danger[data-armed='yes'] {
+  color: var(--on-toner);
+  background: var(--magenta);
 }
 
 .job .job-file {

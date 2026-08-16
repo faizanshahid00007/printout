@@ -6,6 +6,8 @@ const tabs = document.getElementById('tabs');
 let filter = 'pending';
 let timer = null;
 let lastMarkup = null;
+let awaitingConfirm = false;
+let confirmTimer = null;
 
 function show(view) {
   queueView.classList.toggle('hidden', view !== 'queue');
@@ -100,6 +102,11 @@ function jobCard(job) {
         ? `<button class="btn btn--small" data-id="${job.id}" data-next="collected" type="button">Collected</button>`
         : `<button class="btn btn--ghost btn--small" data-id="${job.id}" data-next="pending" type="button">Reopen</button>`;
 
+  // Deleting takes the student's files with it, so it asks twice and never sits
+  // next to the button the counter presses all day.
+  const remove = `<button class="btn btn--danger btn--small" data-id="${job.id}"
+    data-delete="${job.id}" type="button">Delete</button>`;
+
   // Three bands, read top to bottom: who and what it costs, then the files to
   // print, then where the money stands.
   return `
@@ -118,8 +125,11 @@ function jobCard(job) {
       <ul class="job-files">${job.files.map(fileRow).join('')}</ul>
 
       <div class="job-foot">
-        ${payment}
-        ${job.notes ? `<div class="job-note">${escape(job.notes)}</div>` : ''}
+        <div class="job-foot-left">
+          ${payment}
+          ${job.notes ? `<div class="job-note">${escape(job.notes)}</div>` : ''}
+        </div>
+        ${remove}
       </div>
     </article>`;
 }
@@ -156,7 +166,7 @@ async function load() {
     ? data.orders.map(jobCard).join('')
     : `<div class="empty"><strong>${emptyStates[filter][0]}</strong>${emptyStates[filter][1]}</div>`;
 
-  if (markup !== lastMarkup) {
+  if (markup !== lastMarkup && !awaitingConfirm) {
     jobsBox.innerHTML = markup;
     lastMarkup = markup;
   }
@@ -196,6 +206,33 @@ tabs.addEventListener('click', (event) => {
 });
 
 jobsBox.addEventListener('click', async (event) => {
+  const deleteButton = event.target.closest('button[data-delete]');
+  if (deleteButton) {
+    // First press asks, second press does it. The refresh is held in between so
+    // the question cannot vanish from under the cursor.
+    if (deleteButton.dataset.armed !== 'yes') {
+      deleteButton.dataset.armed = 'yes';
+      deleteButton.textContent = 'Delete for good?';
+      awaitingConfirm = true;
+      clearTimeout(confirmTimer);
+      confirmTimer = setTimeout(() => {
+        deleteButton.dataset.armed = '';
+        deleteButton.textContent = 'Delete';
+        awaitingConfirm = false;
+      }, 5000);
+      return;
+    }
+
+    clearTimeout(confirmTimer);
+    awaitingConfirm = false;
+    deleteButton.disabled = true;
+    deleteButton.textContent = 'Deleting…';
+    await fetch(`/api/shop/orders/${deleteButton.dataset.delete}`, { method: 'DELETE' });
+    lastMarkup = null;
+    load();
+    return;
+  }
+
   const button = event.target.closest('button[data-next], button[data-pay]');
   if (!button) return;
   button.disabled = true;
