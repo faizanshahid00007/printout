@@ -651,6 +651,33 @@ app.post('/api/shop/orders/:id/payment', requireShop, async (req, res) => {
   res.json({ ok: true });
 });
 
+// Clearing a whole tab at once. Scoped to what the shop is actually looking at
+// rather than a blanket wipe, so "delete all" means the list on screen.
+const QUEUE_FILTERS = {
+  pending: "status = 'pending'",
+  printed: "status = 'printed'",
+  collected: "status = 'collected'",
+  prepaid: "status = 'pending' AND payment_status IN ('paid', 'claimed')",
+  all: 'TRUE',
+};
+
+app.delete('/api/shop/orders', requireShop, async (req, res) => {
+  const status = String(req.query.status || '');
+  const where = QUEUE_FILTERS[status];
+  if (!where) return res.status(400).json({ error: 'Unknown queue' });
+
+  const files = await db.all(
+    `SELECT stored_name FROM order_files
+      WHERE order_id IN (SELECT id FROM orders WHERE ${where})`
+  );
+  const result = await db.query(`DELETE FROM orders WHERE ${where}`);
+
+  await Promise.all(files.map((file) => storage.remove(file.stored_name).catch(() => {})));
+
+  console.log(`Shop cleared ${result.rowCount} order(s) from "${status}"`);
+  res.json({ ok: true, ordersRemoved: result.rowCount, filesRemoved: files.length });
+});
+
 // Housekeeping: clearing a finished job takes its files with it, so storage does
 // not fill up with prints nobody will ask for again.
 app.delete('/api/shop/orders/:id', requireShop, async (req, res) => {

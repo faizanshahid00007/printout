@@ -1043,6 +1043,25 @@ textarea {
   font-weight: 600;
 }
 
+/* Sits at the end of the row, apart from the filters, and only fills in once it
+   has been armed. */
+.tab--danger {
+  margin-left: auto;
+  color: var(--magenta);
+  border-color: var(--magenta);
+}
+
+.tab--danger:hover {
+  color: var(--on-toner);
+  background: var(--magenta);
+}
+
+.tab--danger.is-armed {
+  color: var(--on-toner);
+  background: var(--magenta);
+  border-color: var(--magenta);
+}
+
 .jobs {
   display: grid;
   gap: 10px;

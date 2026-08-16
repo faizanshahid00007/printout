@@ -201,6 +201,7 @@ tabs.addEventListener('click', (event) => {
   if (!tab) return;
   filter = tab.dataset.status;
   lastMarkup = null;
+  disarmClear();
   tabs.querySelectorAll('.tab').forEach((el) => el.classList.toggle('is-active', el === tab));
   load();
 });
@@ -246,6 +247,58 @@ jobsBox.addEventListener('click', async (event) => {
       body: JSON.stringify({ status: paying ? button.dataset.pay : button.dataset.next }),
     }
   );
+  load();
+});
+
+// Emptying a whole tab names the number it is about to destroy, and asks twice
+// like the single delete does.
+const clearButton = document.getElementById('clear-queue');
+let clearArmed = false;
+let clearTimer = null;
+
+const tabLabels = {
+  pending: 'waiting',
+  prepaid: 'prepaid',
+  printed: 'printed',
+  collected: 'collected',
+  all: '',
+};
+
+function disarmClear() {
+  clearArmed = false;
+  awaitingConfirm = false;
+  clearTimeout(clearTimer);
+  clearButton.textContent = 'Delete all';
+  clearButton.classList.remove('is-armed');
+}
+
+clearButton.addEventListener('click', async () => {
+  const showing = jobsBox.querySelectorAll('.job').length;
+  if (showing === 0) {
+    clearButton.textContent = 'Nothing to delete';
+    setTimeout(disarmClear, 2000);
+    return;
+  }
+
+  if (!clearArmed) {
+    clearArmed = true;
+    awaitingConfirm = true;
+    clearButton.classList.add('is-armed');
+    clearButton.textContent = `Delete ${showing} ${tabLabels[filter]} order${
+      showing === 1 ? '' : 's'
+    } for good?`.replace('  ', ' ');
+    clearTimer = setTimeout(disarmClear, 6000);
+    return;
+  }
+
+  clearTimeout(clearTimer);
+  clearButton.textContent = 'Deleting…';
+  await fetch(`/api/shop/orders?status=${filter}`, { method: 'DELETE' });
+  awaitingConfirm = false;
+  clearArmed = false;
+  clearButton.classList.remove('is-armed');
+  clearButton.textContent = 'Delete all';
+  lastMarkup = null;
   load();
 });
 
