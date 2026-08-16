@@ -62,7 +62,8 @@ a {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 4px 12px;
   padding-bottom: 10px;
   border-bottom: 2px solid var(--toner);
   margin-bottom: 28px;
@@ -71,10 +72,16 @@ a {
 .masthead h1 {
   font-family: var(--display);
   font-weight: 700;
-  font-size: clamp(28px, 7vw, 40px);
+  font-size: clamp(25px, 6vw, 35px);
   letter-spacing: -0.02em;
   text-transform: uppercase;
   margin: 0;
+  white-space: nowrap;
+}
+
+.masthead h1 .mark {
+  vertical-align: -0.14em;
+  margin-right: 10px;
 }
 
 .masthead h1 em {

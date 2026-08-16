@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Campus Print Shop">
+  <title>Campus Print Shop</title>
+  <!-- A sheet with the toner bar printed across it. The paper stays light so the
+       mark holds up on a dark browser tab as well as on the page. -->
+  <path
+    d="M9.5 3.5h19.4L41.5 16.1V42a2.5 2.5 0 0 1-2.5 2.5H9.5A2.5 2.5 0 0 1 7 42V6A2.5 2.5 0 0 1 9.5 3.5z"
+    fill="#ffffff"
+    stroke="#15171b"
+    stroke-width="3"
+    stroke-linejoin="round"
+  />
+  <path d="M28.5 4v11a2 2 0 0 0 2 2h11" fill="none" stroke="#15171b" stroke-width="3" />
+  <g>
+    <rect x="12" y="24" width="6" height="14" fill="#0089c7" />
+    <rect x="18" y="24" width="6" height="14" fill="#d6006e" />
+    <rect x="24" y="24" width="6" height="14" fill="#f5b301" />
+    <rect x="30" y="24" width="6" height="14" fill="#15171b" />
+  </g>
+</svg>

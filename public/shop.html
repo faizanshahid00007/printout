@@ -4,12 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Print queue — shop counter</title>
+    <link rel="icon" href="mark.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <meta name="theme-color" content="#15171b" />
     <link rel="stylesheet" href="style.css" />
   </head>
   <body>
     <main class="wrap wrap--wide hidden" id="queue-view">
       <header class="masthead">
-        <h1>Print <em>Queue</em></h1>
+        <h1><img class="mark" src="mark.svg" alt="" width="30" height="30" />Print <em>Queue</em></h1>
         <p><span id="live">Refreshing every 15s</span> · <button class="tab" id="logout" type="button">Sign out</button></p>
       </header>
 
@@ -26,7 +29,7 @@
 
     <main class="wrap signin hidden" id="signin-view">
       <header class="masthead">
-        <h1>Shop <em>Login</em></h1>
+        <h1><img class="mark" src="mark.svg" alt="" width="30" height="30" />Shop <em>Login</em></h1>
       </header>
       <div class="alert" id="signin-error" role="alert"></div>
       <form class="ticket" id="signin-form">
