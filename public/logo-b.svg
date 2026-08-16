@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" role="img" aria-label="Print Shop">
+  <title>Print Shop</title>
+  <circle cx="24" cy="24" r="24" fill="#d6006e" />
+  <g fill="#ffffff">
+    <rect x="12" y="15" width="24" height="4.5" rx="2.25" />
+    <rect x="12" y="22" width="24" height="4.5" rx="2.25" />
+    <rect x="12" y="29" width="14" height="4.5" rx="2.25" />
+  </g>
+</svg>
