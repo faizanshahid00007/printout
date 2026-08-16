@@ -169,6 +169,13 @@ function codeFromName(name) {
     .slice(0, 40);
 }
 
+// Multipart filenames arrive as latin1, so anything beyond plain ASCII — a
+// narrow space in a screenshot name, an accent, Devanagari — turns to mojibake
+// unless it is read back as UTF-8.
+function cleanName(name) {
+  return Buffer.from(name, 'latin1').toString('utf8').slice(0, 200);
+}
+
 // Pages per file: read out of a PDF, one per image, unknowable for Word — a .docx
 // repaginates on whatever machine opens it, so the counter quotes those by hand.
 async function countPages(bytes, kind) {
@@ -282,7 +289,7 @@ app.post('/api/orders', (req, res) => {
             [
               rows[0].id,
               index,
-              item.file.originalname.slice(0, 200),
+              cleanName(item.file.originalname),
               item.file.filename,
               item.kind,
               item.file.size,
@@ -301,7 +308,7 @@ app.post('/api/orders', (req, res) => {
         price,
         quoteNeeded,
         files: counted.map((item) => ({
-          name: item.file.originalname,
+          name: cleanName(item.file.originalname),
           kind: item.kind,
           pages: item.pages,
           copies: item.copies,

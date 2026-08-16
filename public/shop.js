@@ -100,19 +100,27 @@ function jobCard(job) {
         ? `<button class="btn btn--small" data-id="${job.id}" data-next="collected" type="button">Collected</button>`
         : `<button class="btn btn--ghost btn--small" data-id="${job.id}" data-next="pending" type="button">Reopen</button>`;
 
+  // Three bands, read top to bottom: who and what it costs, then the files to
+  // print, then where the money stands.
   return `
     <article class="job" data-status="${job.status}" data-payment="${job.payment_status}">
-      <div class="job-code">${escape(job.code)}</div>
-      <div>
-        <ul class="job-files">${job.files.map(fileRow).join('')}</ul>
-        <div class="job-meta">
-          ${spec} · ${escape(job.student_name)}${job.phone ? ` · ${escape(job.phone)}` : ''} · ${when(job.created_at)}
+      <div class="job-head">
+        <div class="job-who">
+          <div class="job-code">${escape(job.code)}</div>
+          <div class="job-meta">
+            ${spec} · ${when(job.created_at)}${job.phone ? ` · ${escape(job.phone)}` : ''}
+          </div>
         </div>
-        <div class="job-payment">${payment}</div>
+        ${money}
+        <div class="job-actions">${paymentAction}${actions}</div>
+      </div>
+
+      <ul class="job-files">${job.files.map(fileRow).join('')}</ul>
+
+      <div class="job-foot">
+        ${payment}
         ${job.notes ? `<div class="job-note">${escape(job.notes)}</div>` : ''}
       </div>
-      ${money}
-      <div class="job-actions">${paymentAction}${actions}</div>
     </article>`;
 }
 
