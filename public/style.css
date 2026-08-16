@@ -708,6 +708,46 @@ textarea {
   margin-top: 7px;
 }
 
+/* The UPI ID is the fallback for anyone who cannot scan — on the same phone
+   they are reading this on, for instance. */
+.pay-vpa {
+  margin-top: 18px;
+}
+
+.pay-vpa-label {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin-bottom: 7px;
+}
+
+.pay-vpa-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+
+.pay-vpa-row code {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 15px;
+  padding: 9px 12px;
+  background: var(--tray);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow-wrap: anywhere;
+}
+
+.pay-vpa-row .btn {
+  white-space: nowrap;
+}
+
 #pay-form {
   margin-top: 16px;
 }

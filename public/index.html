@@ -125,14 +125,20 @@
             <p class="pay-lead" id="pay-lead"></p>
 
             <div id="pay-start">
-              <button class="btn hidden" type="button" id="pay-card">Pay online</button>
-              <a class="btn hidden" id="pay-link" href="#">Pay by UPI</a>
-              <button class="btn btn--ghost hidden" type="button" id="pay-qr-toggle">Show QR</button>
-              <figure class="pay-qr hidden" id="pay-qr">
+              <figure class="pay-qr" id="pay-qr">
                 <img id="pay-qr-img" alt="UPI QR code for this order" />
-                <figcaption>Scan with any UPI app · <span id="pay-upi-id"></span></figcaption>
+                <figcaption>Scan with any UPI app — the amount is already filled in</figcaption>
               </figure>
-              <form id="pay-form" class="hidden">
+
+              <div class="pay-vpa">
+                <span class="pay-vpa-label">Or send it to this UPI ID</span>
+                <div class="pay-vpa-row">
+                  <code id="pay-upi-id"></code>
+                  <button class="btn btn--small" type="button" id="pay-copy">Copy</button>
+                </div>
+              </div>
+
+              <form id="pay-form">
                 <label for="pay-ref">Reference number from your payment app</label>
                 <div class="lookup-row">
                   <input type="text" id="pay-ref" inputmode="numeric" maxlength="18"
@@ -155,7 +161,6 @@
       </section>
     </main>
 
-    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

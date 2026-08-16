@@ -313,7 +313,7 @@ async function loadPayment(code, amount) {
   payStart.classList.remove('hidden');
   payDone.classList.add('hidden');
 
-  if (!state.payable && !state.gateway) {
+  if (!state.payable) {
     payLead.textContent = state.reason || 'Pay at the counter.';
     payStart.classList.add('hidden');
     return;
@@ -321,88 +321,23 @@ async function loadPayment(code, amount) {
 
   payLead.innerHTML = `Pay <strong>₹${state.amount}</strong> now and the shop can print before you get there — or skip this and pay cash at the counter.`;
 
-  // Card/netbanking goes through the gateway; UPI is a direct transfer. Either
-  // can be switched off, so each control appears only when it works.
-  const cardButton = document.getElementById('pay-card');
-  cardButton.classList.toggle('hidden', !state.gateway);
-  cardButton.dataset.amount = state.amount;
-
-  // With the gateway available it is the one that settles itself, so UPI steps
-  // back to being the second option rather than an equal one.
-  const upiLinkButton = document.getElementById('pay-link');
-  upiLinkButton.classList.toggle('hidden', !state.payable);
-  upiLinkButton.classList.toggle('btn--ghost', state.gateway);
-  document.getElementById('pay-qr-toggle').classList.toggle('hidden', !state.payable);
-  document.getElementById('pay-form').classList.toggle('hidden', !state.payable);
-
-  if (state.payable) {
-    document.getElementById('pay-link').href = state.link;
-    document.getElementById('pay-qr-img').src = state.qr;
-    document.getElementById('pay-upi-id').textContent = state.upiId;
-  }
+  document.getElementById('pay-qr-img').src = state.qr;
+  document.getElementById('pay-upi-id').textContent = state.upiId;
 }
 
-document.getElementById('pay-card').addEventListener('click', async (event) => {
+// Typing a UPI ID by hand invites typos, so it is one tap to copy.
+document.getElementById('pay-copy').addEventListener('click', async (event) => {
   const button = event.currentTarget;
-  payError.textContent = '';
-  button.disabled = true;
-
+  const upiId = document.getElementById('pay-upi-id').textContent;
   try {
-    const response = await fetch(`/api/orders/${encodeURIComponent(payingCode)}/razorpay`, {
-      method: 'POST',
-    });
-    const setup = await response.json();
-    if (!response.ok) throw new Error(setup.error);
-
-    const checkout = new Razorpay({
-      key: setup.keyId,
-      order_id: setup.orderId,
-      amount: setup.amount,
-      currency: 'INR',
-      name: setup.name,
-      description: setup.description,
-      handler: async (result) => {
-        const verified = await fetch(
-          `/api/orders/${encodeURIComponent(payingCode)}/razorpay/verify`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(result),
-          }
-        );
-        const data = await verified.json();
-        if (!verified.ok) {
-          payError.textContent = `${data.error}. Keep the payment ID ${result.razorpay_payment_id} and show it at the counter.`;
-          return;
-        }
-        payStart.classList.add('hidden');
-        payDone.classList.remove('hidden');
-        payDone.textContent = `Paid ₹${data.amount} — confirmed automatically. The shop can print without you there.`;
-      },
-      modal: {
-        ondismiss: () => {
-          button.disabled = false;
-        },
-      },
-    });
-
-    checkout.on('payment.failed', (failure) => {
-      payError.textContent =
-        failure?.error?.description || 'That payment did not go through. Try again or pay by UPI.';
-      button.disabled = false;
-    });
-
-    checkout.open();
-  } catch (err) {
-    payError.textContent = err.message || 'Could not start the payment.';
-    button.disabled = false;
+    await navigator.clipboard.writeText(upiId);
+    button.textContent = 'Copied';
+    setTimeout(() => {
+      button.textContent = 'Copy';
+    }, 2000);
+  } catch {
+    payError.textContent = `Copy it by hand: ${upiId}`;
   }
-});
-
-document.getElementById('pay-qr-toggle').addEventListener('click', () => {
-  const qr = document.getElementById('pay-qr');
-  const shown = qr.classList.toggle('hidden');
-  document.getElementById('pay-qr-toggle').textContent = shown ? 'Show QR' : 'Hide QR';
 });
 
 document.getElementById('pay-form').addEventListener('submit', async (event) => {

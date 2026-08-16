@@ -80,20 +80,21 @@ Paying never blocks the queue. It changes when the shop can safely print:
 - **Paid** — money accounted for. The shop can print and set it aside without the student
   there, which is the whole point for someone ordering from outside campus.
 
-The student gets a UPI deep link (opens GPay/PhonePe directly on a phone) and a QR for
-desktop, both carrying the exact amount and the order code as the note. Entering the code
-on the front page brings the slip back, so they can pay later from anywhere.
+The slip shows a QR carrying the exact amount and the order code as the note, plus the
+shop UPI ID to copy for anyone paying on the same phone they are reading it on. Entering
+the name on the front page brings the slip back, so they can pay later from anywhere.
 
 **A UPI transfer goes straight to the shop's own ID, so this app cannot verify it.** A
 student could type any digits. That is why a claim shows as *check bank* and only the shop
 can mark it paid — treat the chip as a claim until confirmed. Orders with a Word file have
 no computed total, so they cannot be prepaid at all and say so.
 
-### Razorpay, for payments that verify themselves
+### Razorpay
 
-Fill in `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` and a **Pay online** button appears
-next to the UPI one. Card, netbanking, and UPI all go through the gateway, and the shop
-has nothing to check: the job shows *Paid · verified online* on its own.
+The gateway routes are still here and tested — `/api/orders/:code/razorpay` creates an
+order and its `/verify` counterpart checks the signature — but the shop asked for UPI only,
+so no button on the page calls them. Restoring card payment means putting the button back
+in the slip; the server side needs nothing.
 
 How the proof works. The server asks Razorpay to create an order and remembers its id.
 When the student pays, Razorpay hands the browser a signature — an HMAC of
