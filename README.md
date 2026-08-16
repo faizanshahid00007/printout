@@ -108,6 +108,26 @@ about two working days rather than instantly, with a per-transaction fee.
 Keep UPI switched on alongside it: it is instant and free, which suits walk-in students.
 The gateway earns its fee on orders placed from off campus.
 
+## Reaching it from outside campus
+
+The app keeps files and the order history on the machine it runs on, so rather than deploy
+it somewhere with a disposable disk, put a tunnel in front of the machine that already has
+the data:
+
+```sh
+cloudflared tunnel --url http://localhost:3000
+```
+
+That prints an `https://….trycloudflare.com` address that works from any network, with a
+valid certificate and no account or card. Both the student page and the queue are reachable
+through it, so hand the address out and keep the shop URL to yourself.
+
+The address changes every time the tunnel restarts. A named tunnel on a domain you own
+keeps it stable, and needs a free Cloudflare account.
+
+While it is exposed, remember the whole internet can reach the upload form: nothing rate
+limits uploads, so keep an eye on `uploads/` if you leave it running unattended.
+
 ## Putting it on the college network
 
 The shop PC and the students' phones need to be on the same network. Run the server
