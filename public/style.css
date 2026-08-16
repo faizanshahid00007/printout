@@ -275,7 +275,7 @@ a {
   margin-bottom: 0;
 }
 
-.field > label,
+.field > label:not(.drop),
 .field > .field-label {
   display: block;
   font-family: var(--mono);
@@ -388,6 +388,35 @@ textarea {
   opacity: 0;
 }
 
+/* A plate mark, not a clip-art icon: the plus sits in a toner square so the slot
+   reads as somewhere paper goes in. */
+.drop-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  margin-bottom: 12px;
+  font-family: var(--display);
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--on-toner);
+  background: var(--toner);
+  border-radius: var(--radius);
+  transition: background 0.2s, transform 0.2s;
+}
+
+.drop:hover .drop-mark,
+.drop.is-over .drop-mark {
+  background: var(--magenta);
+  transform: translateY(-2px);
+}
+
+.drop.has-file .drop-mark {
+  display: none;
+}
+
 .drop strong {
   display: block;
   font-family: var(--display);
@@ -397,7 +426,10 @@ textarea {
 }
 
 .drop span {
+  font-family: var(--body);
   font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--toner-soft);
 }
 
@@ -1439,5 +1471,133 @@ textarea {
   *::after {
     animation: none !important;
     transition: none !important;
+  }
+}
+
+/* --- phones -----------------------------------------------------------------
+   Most students arrive here on a phone, one-handed, in a corridor. The desktop
+   type scale is too small to read and the controls are too small to hit, so the
+   whole thing steps up a size rather than merely reflowing. */
+@media (max-width: 560px) {
+  .wrap {
+    padding: 20px 16px 56px;
+  }
+
+  .lede {
+    font-size: 16px;
+    margin-bottom: 22px;
+  }
+
+  .ticket {
+    padding: 18px 16px;
+  }
+
+  /* Labels stop being tiny engraved capitals and become something you can read
+     at arm's length. */
+  .field > label:not(.drop),
+  .field > .field-label,
+  .pay-vpa-label,
+  .copies-field span {
+    font-size: 12px;
+    letter-spacing: 0.06em;
+  }
+
+  .hint {
+    font-size: 14px;
+  }
+
+  /* Every control clears the 44px a thumb needs. */
+  input[type='text'],
+  input[type='tel'],
+  input[type='number'],
+  textarea {
+    padding: 13px 14px;
+    font-size: 16px; /* under 16px, iOS zooms the page on focus */
+  }
+
+  .segmented label {
+    padding: 13px 10px;
+    font-size: 12px;
+  }
+
+  .segmented--mini label {
+    padding: 11px 12px;
+    font-size: 12px;
+  }
+
+  .copies-field input {
+    width: 64px;
+    padding: 10px 8px;
+    font-size: 15px;
+  }
+
+  .btn {
+    padding: 15px 20px;
+    font-size: 18px;
+  }
+
+  .btn--small {
+    padding: 11px 14px;
+    font-size: 14px;
+  }
+
+  .setall button {
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .filerow-name {
+    font-size: 15px;
+  }
+
+  .filerow-remove {
+    font-size: 11px;
+    padding: 8px 4px;
+  }
+
+  .filerow-opts {
+    gap: 10px;
+  }
+
+  /* The feed slot becomes the obvious target on the page. */
+  .drop {
+    padding: 30px 16px;
+  }
+
+  .drop strong {
+    font-size: 22px;
+  }
+
+  .drop span {
+    font-size: 14px;
+  }
+
+  .slip {
+    padding: 26px 18px 24px;
+  }
+
+  .slip dl {
+    grid-template-columns: 1fr;
+    gap: 3px 0;
+  }
+
+  .slip dt {
+    margin-top: 10px;
+  }
+
+  .slip dt:first-child {
+    margin-top: 0;
+  }
+
+  .lookup h2 {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  .drop-mark {
+    width: 52px;
+    height: 52px;
+    font-size: 34px;
   }
 }

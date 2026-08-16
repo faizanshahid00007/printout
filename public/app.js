@@ -66,6 +66,11 @@ function kindOf(name) {
 
 const kindLabel = { pdf: 'PDF', image: 'Photo', word: 'Word' };
 
+// Touch devices get 'tap', pointer devices keep 'drag'.
+const touch = window.matchMedia('(pointer: coarse)').matches;
+const pickVerb = touch ? 'Tap to add files' : 'Choose files';
+const pickHint = touch ? 'PDF, photos, Word' : 'or drag them here · PDF, photos, Word';
+
 function rowMarkup(entry, index) {
   const kind = kindOf(entry.file.name);
   const name = escapeHtml(entry.file.name);
@@ -110,11 +115,11 @@ function updateSummary() {
   const total = chosen.reduce((sum, entry) => sum + entry.file.size, 0);
 
   if (chosen.length === 0) {
-    dropTitle.textContent = 'Choose files';
-    dropSub.innerHTML = `or drag them here · PDF, photos, Word · ${config.maxMb} MB each`;
+    dropTitle.textContent = pickVerb;
+    dropSub.textContent = `${pickHint} · ${config.maxMb} MB each`;
     submit.textContent = 'Send to counter';
   } else {
-    dropTitle.textContent = 'Add more files';
+    dropTitle.textContent = touch ? 'Tap to add more' : 'Add more files';
     dropSub.textContent = `${chosen.length} of ${config.maxFiles} · ${formatSize(total)} · ${describeMix()}`;
     submit.textContent =
       chosen.length > 1 ? `Send ${chosen.length} files to counter` : 'Send to counter';
