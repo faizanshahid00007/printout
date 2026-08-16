@@ -1197,8 +1197,10 @@ textarea {
   /* Every setting is filled, so the row reads as a strip of instructions rather
      than as text. Each one keeps its own colour so the counter can tell them
      apart at a glance instead of reading them. */
-  background: var(--rule);
-  color: var(--toner);
+  /* Single side: steel, the plain default of the sides pair. Fixed rather than
+     themed, so it never sinks into a dark card. */
+  background: #3f5a7a;
+  color: #ffffff;
 }
 
 .tag--pages {
@@ -1211,9 +1213,11 @@ textarea {
   color: var(--on-toner);
 }
 
+/* Black and white is the K plate — graphite, and nothing like the steel of the
+   sides pair beside it. */
 .tag--bw {
-  background: var(--toner-soft);
-  color: var(--on-toner);
+  background: #4b515b;
+  color: #ffffff;
 }
 
 .tag--colour {
