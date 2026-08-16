@@ -1050,7 +1050,7 @@ textarea {
 
 .job {
   display: grid;
-  grid-template-columns: minmax(120px, 168px) 1fr auto;
+  grid-template-columns: minmax(120px, 168px) 1fr auto auto;
   gap: 18px;
   align-items: center;
   background: var(--sheet);
@@ -1096,10 +1096,88 @@ textarea {
 }
 
 .job .job-file {
+  padding: 7px 0;
+  border-top: 1px dashed var(--rule);
+}
+
+.job .job-file:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.job .job-file-head {
   display: grid;
-  grid-template-columns: 34px minmax(0, auto) 1fr;
+  grid-template-columns: 34px minmax(0, 1fr);
   align-items: baseline;
   gap: 10px;
+}
+
+.job .job-file-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 6px 0 0 44px;
+}
+
+/* The settings the machine needs. Big enough to read standing up, and the two
+   that cost money if missed — colour and both sides — carry their own colour. */
+.tag {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--toner);
+  white-space: nowrap;
+}
+
+.tag--copies {
+  font-weight: 600;
+  border-color: var(--toner);
+}
+
+.tag--colour {
+  color: var(--on-toner);
+  background: var(--magenta);
+  border-color: var(--magenta);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.tag--sides {
+  color: var(--on-toner);
+  background: var(--cyan);
+  border-color: var(--cyan);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+
+.tag--pages,
+.tag--bw {
+  color: var(--toner-soft);
+}
+
+/* The amount to collect, sized to be read without leaning in. */
+.job-price {
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  text-align: right;
+}
+
+.job-price small {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--toner-soft);
+  margin-top: 4px;
 }
 
 .job .job-file-kind {
@@ -1133,12 +1211,7 @@ textarea {
   text-decoration-color: currentColor;
 }
 
-.job .job-file-spec {
-  font-family: var(--mono);
-  font-size: 11px;
-  color: var(--toner-soft);
-  white-space: nowrap;
-}
+
 
 /* A colour file inside an otherwise black-and-white batch is the easiest thing
    for the counter to miss, so it gets its own marker. */
@@ -1264,6 +1337,14 @@ textarea {
   .job {
     grid-template-columns: 1fr;
     gap: 10px;
+  }
+
+  .job-price {
+    text-align: left;
+  }
+
+  .job .job-file-tags {
+    margin-left: 0;
   }
 
   .job .job-actions {

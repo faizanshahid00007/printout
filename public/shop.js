@@ -21,25 +21,39 @@ function when(iso) {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   const today = new Date().toDateString() === date.toDateString();
-  const time = date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  // Always 12-hour with am/pm, whatever the machine's locale is set to.
+  const time = date
+    .toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })
+    .toLowerCase();
   return today ? time : `${date.toLocaleDateString([], { day: 'numeric', month: 'short' })} ${time}`;
 }
 
 const kindLabel = { pdf: 'PDF', image: 'IMG', word: 'DOC' };
 
+// What the counter actually has to set on the machine — copies, ink, sides —
+// reads as tags rather than a run-on line, because getting one wrong means
+// reprinting the job.
 function fileRow(file) {
-  const spec = [
-    file.pages ? `${file.pages}p` : 'pages ?',
-    `×${file.copies}`,
-    file.color ? '<span class="flag">COLOUR</span>' : 'B&W',
-    file.duplex ? '<span class="flag">BOTH</span>' : 'single',
-  ].join(' · ');
+  const tags = [
+    `<span class="tag tag--pages">${
+      file.pages ? `${file.pages} page${file.pages === 1 ? '' : 's'}` : 'pages ?'
+    }</span>`,
+    `<span class="tag tag--copies">${file.copies} ${file.copies === 1 ? 'copy' : 'copies'}</span>`,
+    file.color
+      ? '<span class="tag tag--colour">COLOUR</span>'
+      : '<span class="tag tag--bw">B&amp;W</span>',
+    file.duplex
+      ? '<span class="tag tag--sides">BOTH SIDES</span>'
+      : '<span class="tag">Single side</span>',
+  ].join('');
 
   return `
     <li class="job-file" data-kind="${file.kind}" data-ink="${file.color ? 'color' : 'bw'}">
-      <span class="job-file-kind">${kindLabel[file.kind] || 'FILE'}</span>
-      <a href="/api/shop/files/${file.id}" target="_blank" rel="noopener">${escape(file.original_name)}</a>
-      <span class="job-file-spec">${spec}</span>
+      <div class="job-file-head">
+        <span class="job-file-kind">${kindLabel[file.kind] || 'FILE'}</span>
+        <a href="/api/shop/files/${file.id}" target="_blank" rel="noopener">${escape(file.original_name)}</a>
+      </div>
+      <div class="job-file-tags">${tags}</div>
     </li>`;
 }
 
@@ -52,7 +66,9 @@ function jobCard(job) {
     mixed ? '<span class="flag">MIXED INK</span>' : inks.has('colour') ? '<span class="flag">ALL COLOUR</span>' : 'all B&W',
   ].join(' · ');
 
-  const money = job.quote_needed ? `₹${job.price}+quote` : `₹${job.price}`;
+  const money = job.quote_needed
+    ? `<div class="job-price">₹${job.price}<small>+ quote</small></div>`
+    : `<div class="job-price">₹${job.price}</div>`;
 
   // Paid means the shop can print now; unpaid means wait until the student is at
   // the counter with cash. That distinction is the point of the chip.
@@ -90,11 +106,12 @@ function jobCard(job) {
       <div>
         <ul class="job-files">${job.files.map(fileRow).join('')}</ul>
         <div class="job-meta">
-          ${spec} · ${money} · ${escape(job.student_name)}${job.phone ? ` · ${escape(job.phone)}` : ''} · ${when(job.created_at)}
+          ${spec} · ${escape(job.student_name)}${job.phone ? ` · ${escape(job.phone)}` : ''} · ${when(job.created_at)}
         </div>
         <div class="job-payment">${payment}</div>
         ${job.notes ? `<div class="job-note">${escape(job.notes)}</div>` : ''}
       </div>
+      ${money}
       <div class="job-actions">${paymentAction}${actions}</div>
     </article>`;
 }
