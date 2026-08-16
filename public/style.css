@@ -194,6 +194,14 @@ a {
   margin-bottom: 7px;
 }
 
+/* Sits in a field label, where everything else is deliberately quiet — this one
+   word has to carry, so it takes the full toner colour and weight. */
+.optional {
+  font-weight: 700;
+  color: var(--toner);
+  letter-spacing: 0.1em;
+}
+
 .hint {
   font-size: 13px;
   color: var(--toner-soft);
