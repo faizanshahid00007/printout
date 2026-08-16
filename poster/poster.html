@@ -1,0 +1,263 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Printout — counter poster</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Condensed:wght@700&family=IBM+Plex+Sans:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      /* Printed on the shop's own machine, so it commits to paper: light only,
+         no shadows, nothing that costs toner without earning it. */
+      @page {
+        size: A4 portrait;
+        margin: 0;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        width: 210mm;
+        height: 297mm;
+        padding: 16mm 16mm 12mm;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        color: #15171b;
+        font-family: 'IBM Plex Sans', system-ui, sans-serif;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+      }
+
+      .bar {
+        display: flex;
+        height: 7mm;
+        margin-bottom: 9mm;
+      }
+
+      .bar span {
+        flex: 1;
+      }
+
+      .bar span:nth-child(1) { background: #0089c7; }
+      .bar span:nth-child(2) { background: #d6006e; }
+      .bar span:nth-child(3) { background: #f5b301; }
+      .bar span:nth-child(4) { background: #15171b; }
+
+      .brand {
+        display: flex;
+        align-items: center;
+        gap: 5mm;
+        margin-bottom: 8mm;
+      }
+
+      .brand img {
+        width: 18mm;
+        height: 18mm;
+      }
+
+      .brand h1 {
+        margin: 0;
+        font-family: 'IBM Plex Sans Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 22mm;
+        line-height: 0.9;
+        letter-spacing: -0.02em;
+        text-transform: uppercase;
+      }
+
+      .brand h1 em {
+        font-style: normal;
+        color: #d6006e;
+      }
+
+      .headline {
+        font-family: 'IBM Plex Sans Condensed', sans-serif;
+        font-weight: 700;
+        font-size: 15mm;
+        line-height: 1.05;
+        letter-spacing: -0.01em;
+        text-transform: uppercase;
+        margin: 0 0 3mm;
+      }
+
+      .sub {
+        font-size: 5mm;
+        color: #5a6069;
+        margin: 0 0 8mm;
+      }
+
+      .qr-block {
+        display: flex;
+        align-items: center;
+        gap: 10mm;
+        padding: 8mm;
+        border: 0.8mm solid #15171b;
+        margin-bottom: 9mm;
+      }
+
+      .qr-block img {
+        width: 76mm;
+        height: 76mm;
+        flex: none;
+      }
+
+      .steps {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 5mm;
+      }
+
+      .steps li {
+        display: grid;
+        grid-template-columns: 9mm 1fr;
+        gap: 4mm;
+        align-items: baseline;
+      }
+
+      .steps b {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 5mm;
+        color: #d6006e;
+      }
+
+      .steps strong {
+        display: block;
+        font-size: 5.4mm;
+        font-weight: 600;
+      }
+
+      .steps span {
+        font-size: 4.4mm;
+        color: #5a6069;
+      }
+
+      .rates {
+        display: flex;
+        gap: 6mm;
+        margin-bottom: 9mm;
+      }
+
+      .rate {
+        flex: 1;
+        border: 0.5mm solid #cbcdd3;
+        border-top: 2mm solid #15171b;
+        padding: 5mm 6mm;
+      }
+
+      .rate.colour {
+        border-top-color: #d6006e;
+      }
+
+      .rate b {
+        display: block;
+        font-family: 'IBM Plex Sans Condensed', sans-serif;
+        font-size: 14mm;
+        line-height: 1;
+      }
+
+      .rate span {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 3.6mm;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: #5a6069;
+      }
+
+      .url {
+        margin-top: auto;
+        border-top: 0.5mm solid #cbcdd3;
+        padding-top: 5mm;
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 6mm;
+      }
+
+      .url code {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 5.2mm;
+        font-weight: 500;
+        word-break: break-all;
+      }
+
+      .url span {
+        font-family: 'IBM Plex Mono', monospace;
+        font-size: 3.4mm;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: #5a6069;
+        white-space: nowrap;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="bar"><span></span><span></span><span></span><span></span></div>
+
+    <div class="brand">
+      <img src="../public/mark.svg" alt="" />
+      <h1>Print<em>out</em></h1>
+    </div>
+
+    <p class="headline">Scan. Send. Collect.</p>
+    <p class="sub">
+      Print from your phone — no pen drive, no waiting in line. PDFs, photos and Word files.
+    </p>
+
+    <div class="qr-block">
+      <img src="qr.png" alt="" />
+      <ol class="steps">
+        <li>
+          <b>01</b>
+          <div>
+            <strong>Scan this code</strong>
+            <span>Open the camera on your phone and point it here.</span>
+          </div>
+        </li>
+        <li>
+          <b>02</b>
+          <div>
+            <strong>Add your files and your name</strong>
+            <span>Colour or black &amp; white, single or both sides, for each file.</span>
+          </div>
+        </li>
+        <li>
+          <b>03</b>
+          <div>
+            <strong>Pay by UPI, or cash here</strong>
+            <span>Pay now and we print before you arrive.</span>
+          </div>
+        </li>
+        <li>
+          <b>04</b>
+          <div>
+            <strong>Give your name at the counter</strong>
+            <span>That is all we need to find your prints.</span>
+          </div>
+        </li>
+      </ol>
+    </div>
+
+    <div class="rates">
+      <div class="rate">
+        <b>₹2</b>
+        <span>Per page · black &amp; white</span>
+      </div>
+      <div class="rate colour">
+        <b>₹10</b>
+        <span>Per page · colour</span>
+      </div>
+    </div>
+
+    <div class="url">
+      <code>printout-w5pr.onrender.com</code>
+      <span>Can't scan? Type it in</span>
+    </div>
+  </body>
+</html>

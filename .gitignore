@@ -2,3 +2,4 @@ node_modules/
 uploads/
 printshop.db*
 .env
+poster/preview.png
