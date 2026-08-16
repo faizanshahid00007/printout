@@ -41,7 +41,7 @@
 
         <form class="ticket" id="order-form" novalidate>
           <div class="field">
-            <span class="field-label">Files</span>
+            <span class="field-label step" data-step="1">Your files</span>
             <div class="setall hidden" id="setall">
               <span>Set every file to</span>
               <button type="button" data-all="bw">B&amp;W</button>
@@ -81,7 +81,7 @@
 
           <div class="row row--stack">
             <div class="field">
-              <label for="studentName">Your name</label>
+              <label for="studentName" class="step" data-step="2">Your name</label>
               <input type="text" id="studentName" name="studentName" autocomplete="name" required />
             </div>
             <div class="field">
@@ -106,6 +106,7 @@
             <textarea id="notes" name="notes" maxlength="300" placeholder="Staple top-left, print pages 4–12 only…"></textarea>
           </div>
 
+          <span class="field-label step" data-step="3">Send it</span>
           <button class="btn btn--block" type="submit" id="submit">Send to counter</button>
         </form>
 

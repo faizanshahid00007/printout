@@ -1,11 +1,11 @@
-@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans+Condensed:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
 
 :root {
   --paper: #e9eaed;
   --sheet: #ffffff;
   --tray: #fbfbfc; /* recessed areas: the drop zone, chosen files */
   --toner: #15171b;
-  --toner-soft: #5a6069;
+  --toner-soft: #565d68;
   --on-toner: #ffffff; /* text sitting on a --toner fill */
   --rule: #cbcdd3;
   --grain: rgba(21, 23, 27, 0.035);
@@ -15,7 +15,7 @@
   --settled: #0a7a4b; /* money only — never used for print state */
   --claimed-ink: #8a5a00;
 
-  --display: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
+  --display: 'Archivo', 'Helvetica Neue', sans-serif;
   --body: 'IBM Plex Sans', system-ui, sans-serif;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
 
@@ -35,7 +35,7 @@
     --sheet: #1c1f24;
     --tray: #171a1e;
     --toner: #eef0f3;
-    --toner-soft: #969da8;
+    --toner-soft: #a6adb8;
     --on-toner: #131519;
     --rule: #333941;
     --grain: rgba(255, 255, 255, 0.028);
@@ -54,7 +54,7 @@
   --sheet: #1c1f24;
   --tray: #171a1e;
   --toner: #eef0f3;
-  --toner-soft: #969da8;
+  --toner-soft: #a6adb8;
   --on-toner: #131519;
   --rule: #333941;
   --grain: rgba(255, 255, 255, 0.028);
@@ -153,9 +153,9 @@ a {
 
 .masthead h1 {
   font-family: var(--display);
-  font-weight: 700;
-  font-size: clamp(25px, 6vw, 35px);
-  letter-spacing: -0.02em;
+  font-weight: 900;
+  font-size: clamp(24px, 5.5vw, 32px);
+  letter-spacing: -0.035em;
   text-transform: uppercase;
   margin: 0;
   white-space: nowrap;
@@ -276,7 +276,8 @@ a {
 }
 
 .field > label:not(.drop),
-.field > .field-label {
+.field > .field-label,
+.ticket > .field-label {
   display: block;
   font-family: var(--mono);
   font-size: 11px;
@@ -656,9 +657,9 @@ textarea {
   gap: 8px;
   padding: 13px 20px;
   font-family: var(--display);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.03em;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
   color: var(--on-toner);
   background: var(--toner);
@@ -713,9 +714,34 @@ textarea {
   }
 }
 
+/* The one button the whole page exists for wears the brand colour instead of
+   the same black as every other control. */
 .btn--block {
   width: 100%;
   margin-top: 4px;
+  color: #fff;
+  background: var(--magenta);
+  border-color: var(--magenta);
+  box-shadow: 0 12px 24px -16px var(--magenta);
+}
+
+.btn--block:hover {
+  color: var(--on-toner);
+  background: var(--toner);
+  border-color: var(--toner);
+}
+
+.btn--ghost.btn--block {
+  color: var(--toner);
+  background: transparent;
+  border-color: var(--rule);
+  box-shadow: none;
+}
+
+.btn--ghost.btn--block:hover {
+  color: #fff;
+  background: var(--toner);
+  border-color: var(--toner);
 }
 
 .btn--ghost {
@@ -837,7 +863,11 @@ textarea {
 .slip .code {
   font-family: var(--display);
   font-size: clamp(30px, 9vw, 46px);
-  font-weight: 700;
+  font-weight: 900;
+  background: linear-gradient(100deg, var(--cyan), var(--magenta) 55%, var(--yellow));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: -0.01em;
   text-transform: uppercase;
   line-height: 1.05;
@@ -1488,6 +1518,7 @@ textarea {
      at arm's length. */
   .field > label:not(.drop),
   .field > .field-label,
+  .ticket > .field-label,
   .pay-vpa-label,
   .copies-field span {
     font-size: 12px;
@@ -1591,4 +1622,30 @@ textarea {
     width: 46px;
     height: 46px;
   }
+}
+
+/* The form is three moves — files, who you are, send — and saying so out loud
+   makes a long phone page feel short. */
+/* The label rule already sets display, so the number spaces itself with a
+   margin rather than fighting over the layout mode. */
+.step::before {
+  margin-right: 9px;
+  vertical-align: -0.35em;
+  content: attr(data-step);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  font-family: var(--display);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+  color: var(--on-toner);
+  background: var(--toner);
+  border-radius: 50%;
+}
+
+.ticket > .step {
+  margin-top: 4px;
 }
