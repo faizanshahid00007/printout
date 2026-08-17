@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "deck": "node deck/build.js && soffice --headless --convert-to pdf deck/printout-for-the-shop.pptx --outdir deck >/dev/null 2>&1; echo \"deck/printout-for-the-shop.pptx and .pdf rebuilt\""
   },
   "keywords": [],
   "author": "",

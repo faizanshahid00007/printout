@@ -1,6 +1,74 @@
 const path = require('path');
 const PptxGenJS = require('pptxgenjs');
 
+/* ===========================================================================
+   EDIT HERE — everything below this block is layout, not words.
+   Change the text, run `npm run deck`, and both the .pptx and .pdf rebuild.
+   =========================================================================== */
+const TEXT = {
+  shopName: 'PRINTOUT',
+  tagline: 'Students send their files from their phone. You print them.',
+  siteUrl: 'printout-w5pr.onrender.com',
+  queueUrl: 'printout-w5pr.onrender.com/shop.html',
+  contact: 'Questions? Ask Farhan.',
+
+  rateBw: 2,
+  rateColour: 10,
+
+  problems: [
+    'Students queue up holding a pen drive, waiting for a free machine',
+    'Files come over WhatsApp and get lost among other chats',
+    'You ask every student: how many copies? colour? both sides?',
+    'Mistakes mean reprinting — your paper and your toner',
+    'Everyone arrives at the same time between classes',
+  ],
+
+  promise: 'Printout takes all of that off the counter and puts it on the student’s phone.',
+
+  steps: [
+    ['Student scans your QR poster', 'It opens the website on their phone.'],
+    ['They add files and choose settings', 'Copies, colour or B&W, one side or both — per file.'],
+    ['The job appears on your screen', 'Instantly, with everything already decided.'],
+    ['You print and they collect', 'They give their name at the counter.'],
+  ],
+
+  queueNotes: [
+    'Opens on a computer or your phone',
+    'Needs your password — students cannot see it',
+    'New orders appear on their own, every second',
+    'Nothing to install',
+  ],
+
+  priceNotes: [
+    'The website counts the pages inside every PDF',
+    'Price = pages × copies × your rate',
+    'Photos count as one page each',
+    'Word files cannot be counted — those say “+ quote”, so you price them by hand',
+    'Rates can be changed whenever you want',
+  ],
+
+  needs: [
+    'Any phone, tablet or computer with internet',
+    'The queue link, saved as a bookmark',
+    'Your password — keep it to yourself',
+    'The QR poster stuck up at the counter',
+    'Your UPI ID set on the website, so payments reach you',
+  ],
+
+  closing: [
+    'No pen drives at the counter',
+    'No asking how many copies, or colour or not',
+    'Students can pay before they arrive, so prints are ready',
+    'You keep a record of every job of the day',
+    'Nothing to install, and nothing to pay for',
+  ],
+
+  paymentWarning:
+    'Important: a student can tap “I have paid” without paying. Only press ₹ received after you see the money in your app.',
+};
+
+/* =========================== end of editable text ========================= */
+
 // A deck for the person behind the counter, not for a developer: what lands on
 // their screen, what each colour means, and which button to press.
 const INK = '15171B';
@@ -19,7 +87,7 @@ const deck = new PptxGenJS();
 // coordinates are drawn for.
 deck.layout = 'LAYOUT_WIDE';
 deck.author = 'Printout';
-deck.title = 'Printout — how it works at the counter';
+deck.title = TEXT.shopName + ' — how it works at the counter';
 
 const W = 13.33;
 const H = 7.5;
@@ -96,7 +164,7 @@ const shot = (name) => path.join(__dirname, name);
 {
   const s = slide({});
   s.addImage({ path: shot('../public/apple-touch-icon.png'), x: 0.7, y: 1.5, w: 1.1, h: 1.1 });
-  s.addText('PRINTOUT', {
+  s.addText(TEXT.shopName, {
     x: 0.7,
     y: 2.8,
     w: 11.9,
@@ -105,7 +173,7 @@ const shot = (name) => path.join(__dirname, name);
     fontSize: 60,
     color: INK,
   });
-  s.addText('Students send their files from their phone. You print them.', {
+  s.addText(TEXT.tagline, {
     x: 0.75,
     y: 3.9,
     w: 11.5,
@@ -114,7 +182,7 @@ const shot = (name) => path.join(__dirname, name);
     fontSize: 22,
     color: MUTED,
   });
-  s.addText('printout-w5pr.onrender.com', {
+  s.addText(TEXT.siteUrl, {
     x: 0.75,
     y: 5.6,
     w: 11.5,
@@ -129,13 +197,7 @@ const shot = (name) => path.join(__dirname, name);
 /* 2 — the problem ---------------------------------------------------------- */
 {
   const s = slide({ eyebrow: 'Today', title: 'What slows the counter down' });
-  bullets(s, [
-    'Students queue up holding a pen drive, waiting for a free machine',
-    'Files come over WhatsApp and get lost among other chats',
-    'You ask every student: how many copies? colour? both sides?',
-    'Mistakes mean reprinting — your paper and your toner',
-    'Everyone arrives at the same time between classes',
-  ]);
+  bullets(s, TEXT.problems);
   s.addShape(deck.ShapeType.rect, {
     x: 7.2,
     y: 2.0,
@@ -144,7 +206,7 @@ const shot = (name) => path.join(__dirname, name);
     fill: { color: 'F4F4F6' },
     line: { color: RULE, width: 1 },
   });
-  s.addText('Printout takes all of that off the counter and puts it on the student’s phone.', {
+  s.addText(TEXT.promise, {
     x: 7.6,
     y: 2.4,
     w: 4.6,
@@ -159,12 +221,7 @@ const shot = (name) => path.join(__dirname, name);
 /* 3 — how it works --------------------------------------------------------- */
 {
   const s = slide({ eyebrow: 'How it works', title: 'Four steps, start to finish' });
-  const steps = [
-    ['1', 'Student scans your QR poster', 'It opens the website on their phone.'],
-    ['2', 'They add files and choose settings', 'Copies, colour or B&W, one side or both — per file.'],
-    ['3', 'The job appears on your screen', 'Instantly, with everything already decided.'],
-    ['4', 'You print and they collect', 'They give their name at the counter.'],
-  ];
+  const steps = TEXT.steps.map(([head, sub], i) => [String(i + 1), head, sub]);
   steps.forEach(([n, head, sub], i) => {
     const y = 2.05 + i * 1.15;
     s.addShape(deck.ShapeType.ellipse, {
@@ -212,7 +269,7 @@ const shot = (name) => path.join(__dirname, name);
 /* 4 — your screen ---------------------------------------------------------- */
 {
   const s = slide({ eyebrow: 'Your screen', title: 'The queue', tint: CYAN });
-  s.addText('printout-w5pr.onrender.com/shop.html', {
+  s.addText(TEXT.queueUrl, {
     x: 0.75,
     y: 1.7,
     w: 11.9,
@@ -225,12 +282,7 @@ const shot = (name) => path.join(__dirname, name);
   s.addImage({ path: shot('shot-queue.png'), x: 0.75, y: 2.15, w: 8.6, h: 5.0 });
   bullets(
     s,
-    [
-      'Opens on a computer or your phone',
-      'Needs your password — students cannot see it',
-      'New orders appear on their own, every second',
-      'Nothing to install',
-    ],
+    TEXT.queueNotes,
     { x: 9.6, y: 2.3, w: 3.2, fontSize: 15 }
   );
 }
@@ -384,22 +436,27 @@ const shot = (name) => path.join(__dirname, name);
     fill: { color: 'FFF4F9' },
     line: { color: MAGENTA, width: 1 },
   });
-  s.addText(
-    'Important: a student can tap “I have paid” without paying. Only press ₹ received after you see the money in your app.',
-    { x: 1.0, y: 6.15, w: 11.4, h: 0.85, fontFace: BODY, fontSize: 15, bold: true, color: INK, valign: 'middle' }
-  );
+  s.addText(TEXT.paymentWarning, {
+    x: 1.0,
+    y: 6.15,
+    w: 11.4,
+    h: 0.85,
+    fontFace: BODY,
+    fontSize: 15,
+    bold: true,
+    color: INK,
+    valign: 'middle',
+  });
 }
 
 /* 8 — prices --------------------------------------------------------------- */
 {
   const s = slide({ eyebrow: 'Prices', title: 'The bill adds itself up' });
   bullets(s, [
-    'The website counts the pages inside every PDF',
-    'Price = pages × copies × your rate',
-    'Right now: ₹2 a page black & white, ₹10 a page colour',
-    'Photos count as one page each',
-    'Word files cannot be counted — those say “+ quote”, so you price them by hand',
-    'Rates can be changed whenever you want',
+    TEXT.priceNotes[0],
+    TEXT.priceNotes[1],
+    `Right now: ₹${TEXT.rateBw} a page black & white, ₹${TEXT.rateColour} a page colour`,
+    ...TEXT.priceNotes.slice(2),
   ]);
   s.addShape(deck.ShapeType.rect, {
     x: 7.4,
@@ -409,7 +466,7 @@ const shot = (name) => path.join(__dirname, name);
     fill: { color: 'F4F4F6' },
     line: { color: RULE, width: 1 },
   });
-  s.addText('4 pages × 2 copies × ₹2', {
+  s.addText(`4 pages × 2 copies × ₹${TEXT.rateBw}`, {
     x: 7.7,
     y: 2.4,
     w: 4.6,
@@ -418,7 +475,7 @@ const shot = (name) => path.join(__dirname, name);
     fontSize: 18,
     color: MUTED,
   });
-  s.addText('= ₹16', {
+  s.addText(`= ₹${4 * 2 * TEXT.rateBw}`, {
     x: 7.7,
     y: 3.0,
     w: 4.6,
@@ -432,13 +489,7 @@ const shot = (name) => path.join(__dirname, name);
 /* 9 — getting started ------------------------------------------------------ */
 {
   const s = slide({ eyebrow: 'To start', title: 'What you need' });
-  bullets(s, [
-    'Any phone, tablet or computer with internet',
-    'The queue link, saved as a bookmark',
-    'Your password — keep it to yourself',
-    'The QR poster stuck up at the counter',
-    'Your UPI ID set on the website, so payments reach you',
-  ]);
+  bullets(s, TEXT.needs);
   s.addShape(deck.ShapeType.rect, {
     x: 7.3,
     y: 2.0,
@@ -465,14 +516,8 @@ const shot = (name) => path.join(__dirname, name);
 /* 10 — close --------------------------------------------------------------- */
 {
   const s = slide({ eyebrow: 'In short', title: 'Less asking. Less reprinting.' });
-  bullets(s, [
-    'No pen drives at the counter',
-    'No asking how many copies, or colour or not',
-    'Students can pay before they arrive, so prints are ready',
-    'You keep a record of every job of the day',
-    'Nothing to install, and nothing to pay for',
-  ]);
-  s.addText('Questions? Ask Farhan.', {
+  bullets(s, TEXT.closing);
+  s.addText(TEXT.contact, {
     x: 0.75,
     y: 6.4,
     w: 11.9,
