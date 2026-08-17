@@ -3,3 +3,4 @@ uploads/
 printshop.db*
 .env
 poster/preview.png
+deck/shot-*.png
