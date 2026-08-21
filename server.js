@@ -52,7 +52,17 @@ const KINDS = {
     mime: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     inline: false,
   },
+  '.ppt': { kind: 'slides', mime: 'application/vnd.ms-powerpoint', inline: false },
+  '.pptx': {
+    kind: 'slides',
+    mime: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    inline: false,
+  },
 };
+
+// Kinds whose page count cannot be read: Word and PowerPoint both repaginate on
+// whatever machine opens them, so the counter prices these by hand.
+const COUNTED_AT_COUNTER = new Set(['word', 'slides']);
 
 // The queue holds students' files and phone numbers, so there is no default
 // password to fall back on: an unconfigured shop does not start.
@@ -154,7 +164,7 @@ const upload = multer({
   fileFilter: (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     if (KINDS[ext]) return cb(null, true);
-    cb(new Error(`${file.originalname} is not a PDF, image, or Word file`));
+    cb(new Error(`${file.originalname} is not a PDF, photo, Word or PowerPoint file`));
   },
 });
 
@@ -180,7 +190,7 @@ function cleanName(name) {
 // repaginates on whatever machine opens it, so the counter quotes those by hand.
 async function countPages(bytes, kind) {
   if (kind === 'image') return 1;
-  if (kind === 'word') return null;
+  if (COUNTED_AT_COUNTER.has(kind)) return null;
   try {
     const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
     return pdf.getPageCount();

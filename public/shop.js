@@ -30,7 +30,7 @@ function when(iso) {
   return today ? time : `${date.toLocaleDateString([], { day: 'numeric', month: 'short' })} ${time}`;
 }
 
-const kindLabel = { pdf: 'PDF', image: 'IMG', word: 'DOC' };
+const kindLabel = { pdf: 'PDF', image: 'IMG', word: 'DOC', slides: 'PPT' };
 
 // What the counter actually has to set on the machine — copies, ink, sides —
 // reads as tags rather than a run-on line, because getting one wrong means
@@ -64,13 +64,17 @@ function jobCard(job) {
   const inks = new Set(job.files.map((file) => (file.color ? 'colour' : 'bw')));
   const mixed = inks.size > 1;
   const spec = [
-    `${sheets} page${sheets === 1 ? '' : 's'} to print${job.quote_needed ? ' +?' : ''}`,
+    sheets === 0 && job.quote_needed
+      ? 'Count the pages yourself'
+      : `${sheets} page${sheets === 1 ? '' : 's'} to print${job.quote_needed ? ' + more' : ''}`,
     mixed ? '<span class="flag">MIXED INK</span>' : inks.has('colour') ? '<span class="flag">ALL COLOUR</span>' : 'all B&W',
   ].join(' · ');
 
-  const money = job.quote_needed
-    ? `<div class="job-price">₹${job.price}<small>+ quote</small></div>`
-    : `<div class="job-price">₹${job.price}</div>`;
+  const money = !job.quote_needed
+    ? `<div class="job-price">₹${job.price}</div>`
+    : job.price > 0
+      ? `<div class="job-price">₹${job.price}<small>+ price by hand</small></div>`
+      : '<div class="job-price job-price--quote">Price it<small>at the counter</small></div>';
 
   // Paid means the shop can print now; unpaid means wait until the student is at
   // the counter with cash. That distinction is the point of the chip.

@@ -1634,3 +1634,23 @@ textarea {
 }
 
 
+
+/* An order with nothing countable in it has no number yet — saying "₹0" would
+   read as free. */
+.job-price--quote {
+  font-size: 17px;
+  line-height: 1.15;
+  color: var(--claimed-ink);
+}
+
+.slip .qualifier-lead {
+  display: block;
+  font-family: var(--body);
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--toner);
+}
+
+.filerow[data-kind='slides'] .filerow-kind {
+  color: var(--toner-soft);
+}

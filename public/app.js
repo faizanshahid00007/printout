@@ -14,7 +14,7 @@ let config = {
   maxMb: 25,
   maxFiles: 20,
   maxTotalMb: 80,
-  accepts: ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.doc', '.docx'],
+  accepts: ['.pdf', '.jpg', '.jpeg', '.png', '.webp', '.heic', '.heif', '.doc', '.docx', '.ppt', '.pptx'],
 };
 
 // Files build up across several picks, so we keep our own list rather than
@@ -70,15 +70,18 @@ function kindOf(name) {
   const ext = extensionOf(name);
   if (ext === '.pdf') return 'pdf';
   if (ext === '.doc' || ext === '.docx') return 'word';
+  if (ext === '.ppt' || ext === '.pptx') return 'slides';
   return 'image';
 }
 
-const kindLabel = { pdf: 'PDF', image: 'Photo', word: 'Word' };
+const kindLabel = { pdf: 'PDF', image: 'Photo', word: 'Word', slides: 'Slides' };
 
 // Touch devices get 'tap', pointer devices keep 'drag'.
 const touch = window.matchMedia('(pointer: coarse)').matches;
 const pickVerb = touch ? 'Tap to add files' : 'Choose files';
-const pickHint = touch ? 'PDF, photos, Word' : 'or drag them here · PDF, photos, Word';
+const pickHint = touch
+  ? 'PDF, photos, Word, PowerPoint'
+  : 'or drag them here · PDF, photos, Word, PowerPoint';
 
 function rowMarkup(entry, index) {
   const kind = kindOf(entry.file.name);
@@ -160,7 +163,9 @@ function addFiles(incoming) {
   }
 
   showError(
-    rejected.length ? `Skipped ${rejected.join(', ')} — send PDFs, photos, or Word files.` : ''
+    rejected.length
+      ? `Skipped ${rejected.join(', ')} — send PDFs, photos, Word or PowerPoint files.`
+      : ''
   );
   render();
 }
@@ -418,9 +423,18 @@ function showSlip(order) {
     )
     .join('');
 
-  document.getElementById('slip-total').innerHTML = order.quoteNeeded
-    ? `₹${order.price} <span class="qualifier">plus the files the shop counts by hand</span>`
-    : `₹${order.price}`;
+  // Showing ₹0 for a file nobody can count reads as free. Say what will
+  // actually happen instead.
+  const total = document.getElementById('slip-total');
+  if (!order.quoteNeeded) {
+    total.textContent = `₹${order.price}`;
+  } else if (order.price > 0) {
+    total.innerHTML =
+      `₹${order.price} <span class="qualifier">plus the Word or PowerPoint file, priced at the counter</span>`;
+  } else {
+    total.innerHTML =
+      '<span class="qualifier-lead">The shop will price this at the counter</span>';
+  }
 
   document.getElementById('form-view').classList.add('hidden');
   document.getElementById('slip-view').classList.remove('hidden');
