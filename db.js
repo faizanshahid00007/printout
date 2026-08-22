@@ -76,7 +76,8 @@ async function init() {
       copies INTEGER NOT NULL DEFAULT 1,
       color BOOLEAN NOT NULL DEFAULT FALSE,
       duplex BOOLEAN NOT NULL DEFAULT FALSE,
-      price INTEGER
+      price INTEGER,
+      estimated BOOLEAN NOT NULL DEFAULT FALSE
     );
 
     CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status, id DESC);
@@ -99,6 +100,12 @@ async function init() {
       agent TEXT
     );
   `);
+
+  // Page counts read out of a Word file's own properties are exact; ones worked
+  // out from its word count are not, and have to say so.
+  await pool.query(
+    'ALTER TABLE order_files ADD COLUMN IF NOT EXISTS estimated BOOLEAN NOT NULL DEFAULT FALSE'
+  );
 
   // The code is the student's own name now, so the same one comes back every
   // time they send something, and a phone number is theirs to give or not.

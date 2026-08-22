@@ -38,7 +38,9 @@ const kindLabel = { pdf: 'PDF', image: 'IMG', word: 'DOC', slides: 'PPT' };
 function fileRow(file) {
   const tags = [
     `<span class="tag tag--pages">${
-      file.pages ? `${file.pages} page${file.pages === 1 ? '' : 's'}` : 'pages ?'
+      file.pages
+        ? `${file.estimated ? '≈' : ''}${file.pages} page${file.pages === 1 ? '' : 's'}`
+        : 'pages ?'
     }</span>`,
     `<span class="tag tag--copies">${file.copies} ${file.copies === 1 ? 'copy' : 'copies'}</span>`,
     file.color

@@ -207,27 +207,49 @@ function cleanName(name) {
 // docProps/app.xml when they save: Word records the page count it laid out,
 // PowerPoint the number of slides. It is the application's own number rather
 // than a guess, so it is worth reading before falling back to pricing by hand.
+// Roughly what a page of a student handout holds. Only used when the file does
+// not carry a real count.
+const WORDS_PER_PAGE = 450;
+
 function countInsideOfficeFile(bytes, kind) {
   try {
     const entry = new AdmZip(bytes).getEntry('docProps/app.xml');
     if (!entry) return null;
 
     const xml = entry.getData().toString('utf8');
-    const tag = kind === 'slides' ? 'Slides' : 'Pages';
-    const found = xml.match(new RegExp(`<${tag}>(\\d+)</${tag}>`));
-    const count = found ? Number(found[1]) : 0;
-    return count > 0 ? count : null;
+    const read = (tag) => {
+      const found = xml.match(new RegExp(`<${tag}>(\\d+)</${tag}>`));
+      return found ? Number(found[1]) : 0;
+    };
+
+    if (kind === 'slides') {
+      const slides = read('Slides');
+      return slides > 0 ? { pages: slides, estimated: false } : null;
+    }
+
+    const pages = read('Pages');
+    if (pages > 0) return { pages, estimated: false };
+
+    // Google Docs and some other writers leave the page count out but still
+    // record the words. A rough page count beats no price at all, as long as it
+    // is shown as approximate and the counter has the last word.
+    const words = read('Words');
+    if (words > 0) {
+      return { pages: Math.max(1, Math.ceil(words / WORDS_PER_PAGE)), estimated: true };
+    }
+
+    return null;
   } catch {
     return null; // not a readable zip, or written by something that omits it
   }
 }
 
 async function countPages(bytes, kind) {
-  if (kind === 'image') return 1;
+  if (kind === 'image') return { pages: 1, estimated: false };
   if (OFFICE_KINDS.has(kind)) return countInsideOfficeFile(bytes, kind);
   try {
     const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
-    return pdf.getPageCount();
+    return { pages: pdf.getPageCount(), estimated: false };
   } catch {
     return null; // damaged or password-locked; the shop can still open it
   }
@@ -294,7 +316,9 @@ app.post('/api/orders', (req, res) => {
       for (const [index, file] of files.entries()) {
         const type = typeOf(file);
         const bytes = await fs.promises.readFile(file.path);
-        const pages = await countPages(bytes, type.kind);
+        const measured = await countPages(bytes, type.kind);
+        const pages = measured ? measured.pages : null;
+        const estimated = Boolean(measured && measured.estimated);
         const copies = Number.parseInt(specs[index].copies, 10);
         const color = specs[index].color === 'color';
         const duplex = specs[index].duplex === 'double';
@@ -309,6 +333,7 @@ app.post('/api/orders', (req, res) => {
           copies,
           color,
           duplex,
+          estimated,
           price: pages === null ? null : pages * copies * (color ? RATE_COLOR : RATE_BW),
         });
       }
@@ -328,8 +353,8 @@ app.post('/api/orders', (req, res) => {
           await client.query(
             `INSERT INTO order_files
               (order_id, position, original_name, stored_name, kind, size_bytes, pages,
-               copies, color, duplex, price)
-             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+               copies, color, duplex, price, estimated)
+             VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
             [
               rows[0].id,
               index,
@@ -342,6 +367,7 @@ app.post('/api/orders', (req, res) => {
               item.color,
               item.duplex,
               item.price,
+              item.estimated,
             ]
           );
         }
@@ -355,6 +381,7 @@ app.post('/api/orders', (req, res) => {
           name: cleanName(item.file.originalname),
           kind: item.kind,
           pages: item.pages,
+          estimated: item.estimated,
           copies: item.copies,
           color: item.color,
           duplex: item.duplex,
@@ -375,7 +402,7 @@ app.post('/api/orders', (req, res) => {
 
 const filesOfOrder = (orderId) =>
   db.all(
-    `SELECT id, original_name, kind, size_bytes, pages, copies, color, duplex, price
+    `SELECT id, original_name, kind, size_bytes, pages, estimated, copies, color, duplex, price
        FROM order_files WHERE order_id = $1 ORDER BY position`,
     [orderId]
   );
@@ -613,8 +640,8 @@ app.get('/api/shop/orders', requireShop, async (req, res) => {
   // polls every second, so a hundred round trips a second is not an option.
   const files = rows.length
     ? await db.all(
-        `SELECT id, order_id, original_name, kind, size_bytes, pages, copies, color,
-                duplex, price
+        `SELECT id, order_id, original_name, kind, size_bytes, pages, estimated, copies,
+                color, duplex, price
            FROM order_files WHERE order_id = ANY($1) ORDER BY order_id, position`,
         [rows.map((order) => order.id)]
       )
