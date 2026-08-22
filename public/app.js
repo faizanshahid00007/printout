@@ -178,11 +178,15 @@ function addFiles(incoming) {
     if (!duplicate) chosen.push({ file, ...lastUsed });
   }
 
-  showError(
-    rejected.length
-      ? `Skipped ${rejected.join(', ')} — send PDFs, photos, Word or PowerPoint files.`
-      : ''
-  );
+  if (rejected.length) {
+    showError(
+      rejected.length === 1
+        ? `${rejected[0]} cannot be printed here. Send a PDF, photo, Word or PowerPoint file.`
+        : `${rejected.length} files cannot be printed here. Send PDFs, photos, Word or PowerPoint files.`
+    );
+  } else {
+    showError('');
+  }
   render();
 }
 
