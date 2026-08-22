@@ -163,7 +163,15 @@ function isAccepted(file) {
 
 function addFiles(incoming) {
   const rejected = [];
+  const empty = [];
+
   for (const file of incoming) {
+    // A file still sitting in iCloud or Drive comes through with no bytes. It
+    // would upload as an empty page, so stop it here and say what to do.
+    if (file.size === 0) {
+      empty.push(file.name);
+      continue;
+    }
     if (!isAccepted(file)) {
       rejected.push(file.name);
       continue;
@@ -178,7 +186,11 @@ function addFiles(incoming) {
     if (!duplicate) chosen.push({ file, ...lastUsed });
   }
 
-  if (rejected.length) {
+  if (empty.length) {
+    showError(
+      `${empty[0]} came through empty. Open it once on your phone so it downloads fully, then add it again.`
+    );
+  } else if (rejected.length) {
     showError(
       rejected.length === 1
         ? `${rejected[0]} cannot be printed here. Send a PDF, photo, Word or PowerPoint file.`
