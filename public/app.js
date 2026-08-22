@@ -250,6 +250,25 @@ drop.addEventListener('drop', (event) => {
   addFiles(Array.from(event.dataTransfer.files));
 });
 
+// A dropped connection throws a bare "Failed to fetch", which tells a student
+// nothing. One retry covers a sleeping server or a moment of bad signal; after
+// that, say something they can act on.
+async function sendOrder(payload, attempt = 1) {
+  let response;
+  try {
+    response = await fetch('/api/orders', { method: 'POST', body: payload });
+  } catch {
+    if (attempt < 2) return sendOrder(payload, attempt + 1);
+    throw new Error(
+      'Could not reach the shop. Check your internet and send again — the site may have been asleep.'
+    );
+  }
+
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || 'Something went wrong at our end.');
+  return data;
+}
+
 form.addEventListener('submit', async (event) => {
   event.preventDefault();
   showError('');
@@ -287,14 +306,20 @@ form.addEventListener('submit', async (event) => {
   submit.classList.add('is-sending');
   submit.textContent = 'Sending…';
 
+  // The shop sleeps when nobody has used it for a while, and the first request
+  // after that has to wait for it to wake. Say so rather than leaving a spinner,
+  // and try a second time before giving up.
+  const waking = setTimeout(() => {
+    submit.textContent = 'Waking the shop…';
+  }, 6000);
+
   try {
-    const response = await fetch('/api/orders', { method: 'POST', body: payload });
-    const data = await response.json();
-    if (!response.ok) throw new Error(data.error || 'Something went wrong at our end.');
+    const data = await sendOrder(payload);
     showSlip(data);
   } catch (err) {
     showError(err.message);
   } finally {
+    clearTimeout(waking);
     submit.disabled = false;
     submit.classList.remove('is-sending');
     submit.textContent = label;
@@ -404,7 +429,10 @@ document.getElementById('pay-sent').addEventListener('click', async (event) => {
     payDone.classList.remove('hidden');
     payDoneText.textContent = paidLine(data);
   } catch (err) {
-    payError.textContent = err.message || 'Could not record that. Show the payment at the counter.';
+    payError.textContent =
+      err.message === 'Failed to fetch'
+        ? 'Could not reach the shop. Try again, or show your payment at the counter.'
+        : err.message || 'Could not record that. Show the payment at the counter.';
   } finally {
     button.disabled = false;
   }
@@ -507,7 +535,10 @@ document.getElementById('lookup-form').addEventListener('submit', async (event) 
       })),
     });
   } catch (err) {
-    result.textContent = err.message || 'Could not find an order in that name.';
+    result.textContent =
+      err.message === 'Failed to fetch'
+        ? 'Could not reach the shop. Check your internet and try again.'
+        : err.message || 'Could not find an order in that name.';
   }
 });
 
