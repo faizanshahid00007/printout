@@ -258,7 +258,12 @@ async function sendOrder(payload, attempt = 1) {
   try {
     response = await fetch('/api/orders', { method: 'POST', body: payload });
   } catch {
-    if (attempt < 2) return sendOrder(payload, attempt + 1);
+    // Give a sleeping server a few seconds to come up before trying again;
+    // retrying instantly just fails twice.
+    if (attempt < 2) {
+      await new Promise((wait) => setTimeout(wait, 4000));
+      return sendOrder(payload, attempt + 1);
+    }
     throw new Error(
       'Could not reach the shop. Check your internet and send again — the site may have been asleep.'
     );
