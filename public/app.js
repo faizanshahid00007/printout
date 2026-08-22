@@ -589,8 +589,11 @@ function showSlip(order) {
     total.innerHTML =
       `₹${order.price} <span class="qualifier">plus the Word or PowerPoint file, priced at the counter</span>`;
   } else {
+    // Nothing here could be counted. Say what to do about it, since sending a
+    // PDF instead gets them a price straight away.
     total.innerHTML =
-      '<span class="qualifier-lead">The shop will price this at the counter</span>';
+      '<span class="qualifier-lead">The shop will count the pages and tell you</span>' +
+      '<span class="qualifier">Word files do not carry a page count. Send it as a PDF to see the price here.</span>';
   }
 
   document.getElementById('form-view').classList.add('hidden');

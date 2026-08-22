@@ -207,10 +207,11 @@ function cleanName(name) {
 // docProps/app.xml when they save: Word records the page count it laid out,
 // PowerPoint the number of slides. It is the application's own number rather
 // than a guess, so it is worth reading before falling back to pricing by hand.
-// Roughly what a page of a student handout holds. Only used when the file does
-// not carry a real count.
-const WORDS_PER_PAGE = 450;
-
+// Guessing a page count from a document's word count was tried and abandoned: a
+// real lab report of 1,822 words came to 31 printed pages because it was mostly
+// tables and figures, where the guess said 5. Undercharging by six times is far
+// worse than admitting the number is unknown, so only counts the file states
+// about itself are used.
 function countInsideOfficeFile(bytes, kind) {
   try {
     const entry = new AdmZip(bytes).getEntry('docProps/app.xml');
@@ -228,17 +229,7 @@ function countInsideOfficeFile(bytes, kind) {
     }
 
     const pages = read('Pages');
-    if (pages > 0) return { pages, estimated: false };
-
-    // Google Docs and some other writers leave the page count out but still
-    // record the words. A rough page count beats no price at all, as long as it
-    // is shown as approximate and the counter has the last word.
-    const words = read('Words');
-    if (words > 0) {
-      return { pages: Math.max(1, Math.ceil(words / WORDS_PER_PAGE)), estimated: true };
-    }
-
-    return null;
+    return pages > 0 ? { pages, estimated: false } : null;
   } catch {
     return null; // not a readable zip, or written by something that omits it
   }
