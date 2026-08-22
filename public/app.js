@@ -379,17 +379,32 @@ form.addEventListener('submit', async (event) => {
     );
   }
 
+  // Android hands over a file as a reference to somewhere else on the phone, and
+  // that reference can go stale between picking and sending — the upload then
+  // dies instantly with nothing sent. Reading the bytes here forces the problem
+  // into the open, where it can be explained, instead of looking like a network
+  // fault.
   const payload = new FormData();
   payload.set('studentName', document.getElementById('studentName').value);
   payload.set('phone', document.getElementById('phone').value);
   payload.set('notes', document.getElementById('notes').value);
   payload.set(
     'specs',
-    JSON.stringify(
-      chosen.map(({ color, duplex, copies }) => ({ color, duplex, copies }))
-    )
+    JSON.stringify(chosen.map(({ color, duplex, copies }) => ({ color, duplex, copies })))
   );
-  chosen.forEach((entry) => payload.append('files', entry.file));
+
+  try {
+    for (const entry of chosen) {
+      const bytes = await entry.file.arrayBuffer();
+      if (bytes.byteLength === 0) throw new Error(`${entry.file.name} is empty`);
+      payload.append('files', new Blob([bytes], { type: entry.file.type }), entry.file.name);
+    }
+  } catch (err) {
+    report('unreadable', { detail: err.message });
+    return showError(
+      'Your phone could not read that file. Remove it, add it again, and send — if it lives in Drive, download it to the phone first.'
+    );
+  }
 
   const label = submit.textContent;
   submit.disabled = true;
