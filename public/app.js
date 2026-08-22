@@ -266,28 +266,63 @@ drop.addEventListener('drop', (event) => {
   addFiles(Array.from(event.dataTransfer.files));
 });
 
-// A dropped connection throws a bare "Failed to fetch", which tells a student
-// nothing. One retry covers a sleeping server or a moment of bad signal; after
-// that, say something they can act on.
-async function sendOrder(payload, attempt = 1) {
-  let response;
+// fetch() reports every network problem as one word — "Failed to fetch" — which
+// tells a student nothing and hides whether the upload was crawling or dead.
+// XMLHttpRequest gives the upload's progress and separates a timeout from a
+// dropped connection, which matters most on phone data.
+function postOrder(payload, onProgress) {
+  return new Promise((resolve, reject) => {
+    const request = new XMLHttpRequest();
+    request.open('POST', '/api/orders');
+    // Generous: a big scan on slow data, plus a sleeping server waking up.
+    request.timeout = 180000;
+
+    request.upload.addEventListener('progress', (event) => {
+      if (event.lengthComputable) onProgress(event.loaded / event.total);
+    });
+
+    request.addEventListener('load', () => {
+      let data = {};
+      try {
+        data = JSON.parse(request.responseText);
+      } catch {
+        // A gateway page rather than our JSON — treated as a server problem.
+      }
+      if (request.status >= 200 && request.status < 300) return resolve(data);
+      reject(
+        Object.assign(new Error(data.error || `The shop refused it (error ${request.status}).`), {
+          fatal: true,
+        })
+      );
+    });
+
+    request.addEventListener('error', () => reject(new Error('connection lost')));
+    request.addEventListener('timeout', () => reject(new Error('timed out')));
+    request.addEventListener('abort', () => reject(new Error('cancelled')));
+
+    request.send(payload);
+  });
+}
+
+async function sendOrder(payload, onProgress, attempt = 1) {
   try {
-    response = await fetch('/api/orders', { method: 'POST', body: payload });
-  } catch {
-    // Give a sleeping server a few seconds to come up before trying again;
-    // retrying instantly just fails twice.
+    return await postOrder(payload, onProgress);
+  } catch (err) {
+    // The server answering with a refusal is final; only a broken connection is
+    // worth trying again.
+    if (err.fatal) throw err;
+
     if (attempt < 2) {
       await new Promise((wait) => setTimeout(wait, 4000));
-      return sendOrder(payload, attempt + 1);
+      return sendOrder(payload, onProgress, attempt + 1);
     }
+
     throw new Error(
-      'Could not reach the shop. Check your internet and send again — the site may have been asleep.'
+      err.message === 'timed out'
+        ? 'The upload took too long. Move somewhere with better signal, or send fewer files at once.'
+        : 'The connection dropped while sending. Try again on wifi, or send one file at a time.'
     );
   }
-
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) throw new Error(data.error || 'Something went wrong at our end.');
-  return data;
 }
 
 form.addEventListener('submit', async (event) => {
@@ -327,15 +362,23 @@ form.addEventListener('submit', async (event) => {
   submit.classList.add('is-sending');
   submit.textContent = 'Sending…';
 
-  // The shop sleeps when nobody has used it for a while, and the first request
-  // after that has to wait for it to wake. Say so rather than leaving a spinner,
-  // and try a second time before giving up.
+  // Watching a percentage climb is the difference between "it is working" and
+  // "it is stuck" on a slow phone connection.
+  let sent = 0;
+  const onProgress = (fraction) => {
+    sent = fraction;
+    submit.textContent =
+      fraction >= 1 ? 'Almost there…' : `Sending ${Math.round(fraction * 100)}%`;
+  };
+
+  // If nothing has moved at all after six seconds, the server is most likely
+  // still waking up.
   const waking = setTimeout(() => {
-    submit.textContent = 'Waking the shop…';
+    if (sent === 0) submit.textContent = 'Waking the shop…';
   }, 6000);
 
   try {
-    const data = await sendOrder(payload);
+    const data = await sendOrder(payload, onProgress);
     showSlip(data);
   } catch (err) {
     showError(err.message);
