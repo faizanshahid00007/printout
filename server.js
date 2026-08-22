@@ -733,6 +733,38 @@ app.post('/api/shop/orders/:id/status', requireShop, async (req, res) => {
   res.json({ ok: true });
 });
 
+// The phone reports how an upload went so a failure on a network nobody here
+// can reach is still visible. Written by students, read only by the shop.
+app.post('/api/report', async (req, res) => {
+  const body = req.body || {};
+  const number = (value) => {
+    const n = Number(value);
+    return Number.isFinite(n) ? Math.round(n) : null;
+  };
+
+  await db.query(
+    `INSERT INTO upload_reports (outcome, detail, bytes_sent, bytes_total, took_ms, attempt, agent)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      String(body.outcome || 'unknown').slice(0, 40),
+      String(body.detail || '').slice(0, 300),
+      number(body.bytesSent),
+      number(body.bytesTotal),
+      number(body.tookMs),
+      number(body.attempt),
+      String(req.headers['user-agent'] || '').slice(0, 300),
+    ]
+  );
+
+  res.status(204).end();
+});
+
+app.get('/api/shop/reports', requireShop, async (req, res) => {
+  res.json({
+    reports: await db.all('SELECT * FROM upload_reports ORDER BY id DESC LIMIT 40'),
+  });
+});
+
 app.get('/api/config', (req, res) => {
   res.json({
     rateBw: RATE_BW,

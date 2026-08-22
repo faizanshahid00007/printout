@@ -83,6 +83,23 @@ async function init() {
     CREATE INDEX IF NOT EXISTS idx_files_order ON order_files(order_id, position);
   `);
 
+  // A failed upload leaves nothing behind to look at. This records what the
+  // phone saw — how far it got, how long it took — so a fault that only happens
+  // on someone else's network can still be diagnosed.
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS upload_reports (
+      id SERIAL PRIMARY KEY,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+      outcome TEXT NOT NULL,
+      detail TEXT,
+      bytes_sent BIGINT,
+      bytes_total BIGINT,
+      took_ms INTEGER,
+      attempt INTEGER,
+      agent TEXT
+    );
+  `);
+
   // The code is the student's own name now, so the same one comes back every
   // time they send something, and a phone number is theirs to give or not.
   await pool.query(`

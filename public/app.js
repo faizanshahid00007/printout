@@ -270,6 +270,19 @@ drop.addEventListener('drop', (event) => {
 // tells a student nothing and hides whether the upload was crawling or dead.
 // XMLHttpRequest gives the upload's progress and separates a timeout from a
 // dropped connection, which matters most on phone data.
+// Tells the shop what happened, so a failure on a network we cannot reach is
+// still something we can look at afterwards.
+function report(outcome, extra) {
+  try {
+    navigator.sendBeacon(
+      '/api/report',
+      new Blob([JSON.stringify({ outcome, ...extra })], { type: 'application/json' })
+    );
+  } catch {
+    // Diagnostics must never get in the way of the order itself.
+  }
+}
+
 function postOrder(payload, onProgress) {
   return new Promise((resolve, reject) => {
     const request = new XMLHttpRequest();
@@ -278,7 +291,7 @@ function postOrder(payload, onProgress) {
     request.timeout = 180000;
 
     request.upload.addEventListener('progress', (event) => {
-      if (event.lengthComputable) onProgress(event.loaded / event.total);
+      if (event.lengthComputable) onProgress(event.loaded / event.total, event.loaded, event.total);
     });
 
     request.addEventListener('load', () => {
@@ -305,9 +318,30 @@ function postOrder(payload, onProgress) {
 }
 
 async function sendOrder(payload, onProgress, attempt = 1) {
+  const started = Date.now();
+  let sentBytes = 0;
+  let totalBytes = 0;
+
+  const watched = (fraction, loaded, total) => {
+    sentBytes = loaded;
+    totalBytes = total;
+    onProgress(fraction);
+  };
+
   try {
-    return await postOrder(payload, onProgress);
+    const data = await postOrder(payload, watched);
+    if (attempt > 1) {
+      report('recovered', { bytesSent: sentBytes, bytesTotal: totalBytes, tookMs: Date.now() - started, attempt });
+    }
+    return data;
   } catch (err) {
+    report(err.fatal ? 'refused' : 'broken', {
+      detail: err.message,
+      bytesSent: sentBytes,
+      bytesTotal: totalBytes,
+      tookMs: Date.now() - started,
+      attempt,
+    });
     // The server answering with a refusal is final; only a broken connection is
     // worth trying again.
     if (err.fatal) throw err;
