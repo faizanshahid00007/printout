@@ -60,6 +60,21 @@ const KINDS = {
   },
 };
 
+// Phones do not always hand over a usable filename — a Word file picked out of
+// Drive can arrive as `document` with only its media type to go on. Falling
+// back to that type keeps those uploads working.
+const BY_MIME = Object.entries(KINDS).reduce((acc, [ext, type]) => {
+  if (!acc[type.mime]) acc[type.mime] = { ...type, ext };
+  return acc;
+}, {});
+
+function typeOf(file) {
+  const ext = path.extname(file.originalname).toLowerCase();
+  if (KINDS[ext]) return { ...KINDS[ext], ext };
+  const byMime = BY_MIME[(file.mimetype || '').toLowerCase()];
+  return byMime || null;
+}
+
 // Kinds whose page count cannot be read: Word and PowerPoint both repaginate on
 // whatever machine opens them, so the counter prices these by hand.
 const COUNTED_AT_COUNTER = new Set(['word', 'slides']);
@@ -156,14 +171,13 @@ const upload = multer({
   storage: multer.diskStorage({
     destination: os.tmpdir(),
     filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname).toLowerCase();
+      const ext = typeOf(file)?.ext || '';
       cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${ext}`);
     },
   }),
   limits: { fileSize: MAX_MB * 1024 * 1024, files: MAX_FILES },
   fileFilter: (req, file, cb) => {
-    const ext = path.extname(file.originalname).toLowerCase();
-    if (KINDS[ext]) return cb(null, true);
+    if (typeOf(file)) return cb(null, true);
     cb(new Error(`${file.originalname} is not a PDF, photo, Word or PowerPoint file`));
   },
 });
@@ -258,7 +272,7 @@ app.post('/api/orders', (req, res) => {
     try {
       const counted = [];
       for (const [index, file] of files.entries()) {
-        const type = KINDS[path.extname(file.originalname).toLowerCase()];
+        const type = typeOf(file);
         const bytes = await fs.promises.readFile(file.path);
         const pages = await countPages(bytes, type.kind);
         const copies = Number.parseInt(specs[index].copies, 10);

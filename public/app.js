@@ -145,10 +145,26 @@ function render() {
   updateSummary();
 }
 
+// Some pickers hand back a file with no extension in its name. If the browser
+// knows the media type, that is enough to send it — the server checks again.
+const ACCEPTED_TYPES = new Set([
+  'application/pdf',
+  'application/msword',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/vnd.ms-powerpoint',
+  'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+]);
+
+function isAccepted(file) {
+  if (config.accepts.includes(extensionOf(file.name))) return true;
+  const type = (file.type || '').toLowerCase();
+  return ACCEPTED_TYPES.has(type) || type.startsWith('image/');
+}
+
 function addFiles(incoming) {
   const rejected = [];
   for (const file of incoming) {
-    if (!config.accepts.includes(extensionOf(file.name))) {
+    if (!isAccepted(file)) {
       rejected.push(file.name);
       continue;
     }
