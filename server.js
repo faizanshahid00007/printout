@@ -9,6 +9,7 @@ const multer = require('multer');
 const { PDFDocument } = require('pdf-lib');
 const QRCode = require('qrcode');
 const Razorpay = require('razorpay');
+const AdmZip = require('adm-zip');
 
 const db = require('./db');
 const storage = require('./storage');
@@ -75,9 +76,9 @@ function typeOf(file) {
   return byMime || null;
 }
 
-// Kinds whose page count cannot be read: Word and PowerPoint both repaginate on
-// whatever machine opens them, so the counter prices these by hand.
-const COUNTED_AT_COUNTER = new Set(['word', 'slides']);
+// Office files carry their own count inside them rather than being read page by
+// page like a PDF.
+const OFFICE_KINDS = new Set(['word', 'slides']);
 
 // The queue holds students' files and phone numbers, so there is no default
 // password to fall back on: an unconfigured shop does not start.
@@ -202,9 +203,28 @@ function cleanName(name) {
 
 // Pages per file: read out of a PDF, one per image, unknowable for Word — a .docx
 // repaginates on whatever machine opens it, so the counter quotes those by hand.
+// Word and PowerPoint files are zips, and both write what they contain into
+// docProps/app.xml when they save: Word records the page count it laid out,
+// PowerPoint the number of slides. It is the application's own number rather
+// than a guess, so it is worth reading before falling back to pricing by hand.
+function countInsideOfficeFile(bytes, kind) {
+  try {
+    const entry = new AdmZip(bytes).getEntry('docProps/app.xml');
+    if (!entry) return null;
+
+    const xml = entry.getData().toString('utf8');
+    const tag = kind === 'slides' ? 'Slides' : 'Pages';
+    const found = xml.match(new RegExp(`<${tag}>(\\d+)</${tag}>`));
+    const count = found ? Number(found[1]) : 0;
+    return count > 0 ? count : null;
+  } catch {
+    return null; // not a readable zip, or written by something that omits it
+  }
+}
+
 async function countPages(bytes, kind) {
   if (kind === 'image') return 1;
-  if (COUNTED_AT_COUNTER.has(kind)) return null;
+  if (OFFICE_KINDS.has(kind)) return countInsideOfficeFile(bytes, kind);
   try {
     const pdf = await PDFDocument.load(bytes, { ignoreEncryption: true, updateMetadata: false });
     return pdf.getPageCount();
